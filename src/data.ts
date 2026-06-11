@@ -79,7 +79,7 @@ function unwrapList<T>(payload: T[] | PaginatedResponse<T>): T[] {
 }
 
 async function loadApiList<T>(path: string): Promise<T[]> {
-  const url = `${API_BASE_URL}/${path}/`
+  const url = `${API_BASE_URL}/${path}/?all=true`
   const response = await fetch(url)
 
   if (!response.ok) {
