@@ -14,13 +14,18 @@ export function AdminLayout() {
   }
 
   return (
-    <div className={`${shell} flex bg-white`}>
+    <div className={`${shell} flex`}>
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col md:pl-[292px]">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-[272px]">
         <Navbar />
         <main className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-8 md:py-8">
-          {isLoading ? <p className="p-5 text-sm text-[#717171]">Cargando datos académicos...</p> : null}
-          {error ? <p className="p-5 text-sm font-medium text-[#C11331]">{error}</p> : null}
+          {isLoading ? (
+            <div className="flex items-center gap-3 p-5">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#FF385C]" />
+              <p className="text-sm font-medium text-slate-400">Cargando datos academicos...</p>
+            </div>
+          ) : null}
+          {error ? <p className="p-5 text-sm font-semibold text-[#E11D48]">{error}</p> : null}
           {!error ? <Outlet /> : null}
         </main>
       </div>

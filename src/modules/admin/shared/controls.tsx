@@ -11,11 +11,11 @@ export function SearchField({
   value: string
 }) {
   return (
-    <label className="flex h-12 w-full max-w-[380px] items-center gap-3 rounded-full border border-[#EBEBEB] bg-white px-4 shadow-[0_3px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] focus-within:border-[#222222]">
-      <Search size={17} strokeWidth={1.8} className="text-[#717171]" />
+    <label className="flex h-11 w-full max-w-[380px] items-center gap-3 rounded-xl border border-slate-200/60 bg-white/80 px-4 shadow-[0_2px_8px_rgba(15,23,42,0.05)] backdrop-blur transition-all duration-200 focus-within:border-[#FF385C]/40 focus-within:shadow-[0_0_0_3px_rgba(255,56,92,0.08)]">
+      <Search size={16} strokeWidth={1.8} className="text-slate-400" />
       <input
         aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent text-[15px] text-[#222222] outline-none placeholder:text-[#717171]"
+        className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         type="search"
@@ -37,17 +37,17 @@ export function SelectField({
   value: string
 }) {
   return (
-    <label className="grid min-w-[230px] gap-2 text-sm font-semibold text-[#222222]">
+    <label className="grid min-w-[200px] gap-1.5 text-sm font-semibold text-slate-700">
       {label}
-      <span className="flex h-12 items-center rounded-full border border-[#DDDDDD] bg-white px-4 transition focus-within:border-[#222222] hover:border-[#222222]">
+      <span className="flex h-11 items-center rounded-xl border border-slate-200/60 bg-white/80 px-4 backdrop-blur transition-all duration-200 focus-within:border-[#FF385C]/40 focus-within:shadow-[0_0_0_3px_rgba(255,56,92,0.08)] hover:border-slate-300">
         <select
-          className="min-w-0 flex-1 appearance-none bg-transparent text-[15px] font-medium text-[#222222] outline-none"
+          className="min-w-0 flex-1 appearance-none bg-transparent text-sm font-medium text-slate-800 outline-none"
           onChange={(event) => onChange(event.target.value)}
           value={value}
         >
           {children}
         </select>
-        <ChevronDown size={16} strokeWidth={1.8} className="text-[#717171]" />
+        <ChevronDown size={15} strokeWidth={1.8} className="text-slate-400" />
       </span>
     </label>
   )
@@ -65,10 +65,10 @@ export function SectionToolbar({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <strong className="block text-[28px] font-semibold leading-tight text-[#222222]">
+        <strong className="block text-[28px] font-extrabold leading-tight text-slate-900">
           {count.toLocaleString('es-PE')}
         </strong>
-        <span className="text-sm text-[#717171]">{label}</span>
+        <span className="text-sm font-medium text-slate-500">{label}</span>
       </div>
       {search}
     </div>

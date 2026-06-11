@@ -32,16 +32,16 @@ export function ProfesoresPage() {
   }, [query, teachers])
 
   return (
-    <section className="grid gap-6">
-      {/* Encabezado con estadísticas rápidas */}
+    <section className="grid gap-6 animate-fade-in-up">
+      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[#FF5A79] to-[#FF385C] text-white shadow-[0_8px_20px_rgba(255,56,92,0.15)]">
-            <Users size={22} />
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#FF5A79] to-[#FF385C] text-white shadow-[0_8px_24px_rgba(255,56,92,0.20)]">
+            <Users size={22} strokeWidth={1.8} />
           </div>
           <div>
-            <PageTitle>PROFESORES</PageTitle>
-            <p className="text-xs font-semibold text-[#8EA0B8] mt-1">
+            <PageTitle>Profesores</PageTitle>
+            <p className="text-xs font-medium text-slate-400 mt-0.5">
               Docentes registrados y habilitados para el dictado de asignaturas.
             </p>
           </div>
@@ -49,32 +49,32 @@ export function ProfesoresPage() {
         <SearchField onChange={setQuery} placeholder="Buscar docente..." value={query} />
       </div>
 
-      {/* Mini Tarjeta de Resumen */}
-      <div className={cn(panel, 'p-4 flex items-center justify-between bg-gradient-to-r from-white to-[#FFF5F7] border-l-4 border-[#FF385C] shadow-sm')}>
-        <span className="text-sm font-semibold text-[#5D6B82]">Total Docentes Activos</span>
-        <strong className="text-xl font-black text-[#FF385C]">
+      {/* Summary badge */}
+      <div className={cn(panel, 'p-4 flex items-center justify-between border-l-4 border-[#FF385C]')}>
+        <span className="text-sm font-semibold text-slate-500">Total Docentes Activos</span>
+        <strong className="text-xl font-extrabold text-[#FF385C]">
           {filtered.length} docentes
         </strong>
       </div>
 
       <DataTable
-        columns={['Código', 'Docente', 'Correo Electrónico']}
+        columns={['Codigo', 'Docente', 'Correo Electronico']}
         rows={filtered.map((teacher) => {
           const name = fullName(teacher)
           return [
-            <code key={`code-${teacher.docente_id}`} className="rounded-[6px] bg-[#F1F5F9] px-2.5 py-1 text-xs font-black text-[#344054] border border-[#E2E8F0]">
+            <code key={`code-${teacher.docente_id}`} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200/60">
               {teacher.codigo}
             </code>,
             <div key={`name-${teacher.docente_id}`} className="flex items-center gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#FF385C]/10 text-xs font-bold text-[#FF385C] border border-[#FF385C]/15">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#FF385C]/15 to-[#FF385C]/5 text-xs font-bold text-[#FF385C]">
                 {getInitials(name)}
               </span>
-              <span className="font-bold text-[#152033]">{name}</span>
+              <span className="font-bold text-slate-700">{name}</span>
             </div>,
             <a
               key={`mail-${teacher.docente_id}`}
               href={`mailto:${teacher.email}`}
-              className="inline-flex items-center gap-1.5 font-bold text-[#FF385C] hover:underline"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#FF385C] transition-colors hover:text-[#E61E43] hover:underline"
             >
               <Mail size={13} />
               {teacher.email}

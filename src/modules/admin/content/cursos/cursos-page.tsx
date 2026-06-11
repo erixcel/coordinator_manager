@@ -8,18 +8,17 @@ import { cn } from '../../shared/styles'
 import { DataTable } from '../../shared/table'
 
 function CycleBadge({ value }: { value: number }) {
-  // Colores sutiles por ciclos (básico, intermedio, avanzado)
-  let style = 'bg-[#ECFDF5] text-[#047857] border-[#D1FADF]'
+  let style = 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
   if (value >= 5 && value <= 8) {
-    style = 'bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]'
+    style = 'bg-sky-50 text-sky-700 border-sky-200/60'
   } else if (value >= 9) {
-    style = 'bg-[#FAF5FF] text-[#6D28D9] border-[#F3E8FF]'
+    style = 'bg-violet-50 text-violet-700 border-violet-200/60'
   }
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold',
+        'inline-flex items-center rounded-lg border px-2 py-0.5 text-[11px] font-bold',
         style
       )}
     >
@@ -44,9 +43,7 @@ export function CursosPage() {
 
   useEffect(() => {
     if (careers.length > 0 && careerId === 'all') {
-      // Opcional: mantener 'all' si queremos listar todos, o forzar la primera carrera
-      // Por defecto, dejemos 'all' si queremos ver todos los cursos. Pero el código original forzaba.
-      // Modifiquemos para permitir 'all' como opción de carrera también para una vista global!
+      // Keep 'all' as default for global view
     }
   }, [careers, careerId])
 
@@ -61,31 +58,30 @@ export function CursosPage() {
     })
   }, [careerId, courses, cycle, query])
 
-  // Métricas del listado filtrado
   const totalCredits = useMemo(() => {
     return filtered.reduce((acc, course) => acc + (parseFloat(course.creditos) || 0), 0)
   }, [filtered])
 
   return (
-    <section className="grid gap-6">
-      {/* Encabezado */}
+    <section className="grid gap-6 animate-fade-in-up">
+      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[#34D399] to-[#10B981] text-white shadow-[0_8px_20px_rgba(16,185,129,0.15)]">
-            <BookOpen size={22} />
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#34D399] to-[#10B981] text-white shadow-[0_8px_24px_rgba(16,185,129,0.20)]">
+            <BookOpen size={22} strokeWidth={1.8} />
           </div>
           <div>
-            <PageTitle>CURSOS</PageTitle>
-            <p className="text-xs font-semibold text-[#8EA0B8] mt-1">
-              Asignaturas curriculares, créditos lectivos y horas semanales estructuradas.
+            <PageTitle>Cursos</PageTitle>
+            <p className="text-xs font-medium text-slate-400 mt-0.5">
+              Asignaturas curriculares, creditos lectivos y horas semanales estructuradas.
             </p>
           </div>
         </div>
         <SearchField onChange={setQuery} placeholder="Buscar curso..." value={query} />
       </div>
 
-      {/* Controles de filtro */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="flex flex-wrap items-end gap-3">
           <SelectField label="Carrera" onChange={setCareerId} value={careerId}>
             <option value="all">Todas las carreras</option>
@@ -106,47 +102,47 @@ export function CursosPage() {
           </SelectField>
         </div>
 
-        {/* Resumen rápido */}
-        <div className="flex gap-4">
-          <div className="rounded-[8px] bg-white border border-[#E7EDF5] px-4 py-3 flex items-center gap-3 shadow-sm">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-[#10B981]/10 text-[#10B981]">
-              <BookOpen size={16} />
+        {/* Summary */}
+        <div className="flex flex-wrap gap-3">
+          <div className="rounded-xl bg-white/80 backdrop-blur border border-slate-200/60 px-4 py-3 flex items-center gap-3 shadow-sm">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600">
+              <BookOpen size={15} />
             </span>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-[0.05em] text-[#8EA0B8] leading-none">Cursos</span>
-              <strong className="text-sm font-black text-[#152033] mt-1 block">{filtered.length}</strong>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.05em] text-slate-400 leading-none">Cursos</span>
+              <strong className="text-sm font-extrabold text-slate-800 mt-0.5 block">{filtered.length}</strong>
             </div>
           </div>
-          <div className="rounded-[8px] bg-white border border-[#E7EDF5] px-4 py-3 flex items-center gap-3 shadow-sm">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-[#FF385C]/10 text-[#FF385C]">
-              <Award size={16} />
+          <div className="rounded-xl bg-white/80 backdrop-blur border border-slate-200/60 px-4 py-3 flex items-center gap-3 shadow-sm">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-[#FF385C]">
+              <Award size={15} />
             </span>
             <div>
-              <span className="block text-[10px] font-black uppercase tracking-[0.05em] text-[#8EA0B8] leading-none">Créditos Totales</span>
-              <strong className="text-sm font-black text-[#152033] mt-1 block">{totalCredits}</strong>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.05em] text-slate-400 leading-none">Creditos</span>
+              <strong className="text-sm font-extrabold text-slate-800 mt-0.5 block">{totalCredits}</strong>
             </div>
           </div>
         </div>
       </div>
 
       <DataTable
-        columns={['Código', 'Curso / Asignatura', 'Carrera Profesional', 'Ciclo Lectivo', 'Créditos', 'Horas Sem.']}
+        columns={['Codigo', 'Curso / Asignatura', 'Carrera Profesional', 'Ciclo Lectivo', 'Creditos', 'Horas Sem.']}
         rows={filtered.map((course) => [
-          <code key={`code-${course.curso_id}`} className="rounded-[6px] bg-[#F1F5F9] px-2.5 py-1 text-xs font-black text-[#344054] border border-[#E2E8F0]">
+          <code key={`code-${course.curso_id}`} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200/60">
             {course.codigo}
           </code>,
-          <span key={`name-${course.curso_id}`} className="font-bold text-[#152033]">
+          <span key={`name-${course.curso_id}`} className="font-bold text-slate-700">
             {course.nombre}
           </span>,
-          <span key={`career-${course.curso_id}`} className="font-semibold text-[#5D6B82]">
+          <span key={`career-${course.curso_id}`} className="font-semibold text-slate-500">
             {getCareerName(careers, course.carrera_id)}
           </span>,
           <CycleBadge key={`cycle-${course.curso_id}`} value={course.ciclo} />,
-          <strong key={`cred-${course.curso_id}`} className="text-sm font-black text-[#152033]">
+          <strong key={`cred-${course.curso_id}`} className="text-sm font-extrabold text-slate-800">
             {course.creditos}
           </strong>,
-          <span key={`hours-${course.curso_id}`} className="inline-flex items-center gap-1 font-semibold text-[#5D6B82]">
-            <Clock size={12} className="text-[#8EA0B8]" />
+          <span key={`hours-${course.curso_id}`} className="inline-flex items-center gap-1 font-semibold text-slate-500">
+            <Clock size={12} className="text-slate-400" />
             {course.horas_semanales} hrs
           </span>
         ])}

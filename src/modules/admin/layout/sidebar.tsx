@@ -36,21 +36,22 @@ export function Sidebar() {
     <>
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 flex w-[292px] -translate-x-full flex-col border-r border-[#EBEBEB] bg-white px-5 py-6 transition-transform md:translate-x-0',
+          'fixed inset-y-0 left-0 z-30 flex w-[272px] -translate-x-full flex-col bg-gradient-to-b from-[#0F172A] to-[#1E293B] px-5 py-6 transition-transform duration-300 ease-out md:translate-x-0',
           isSidebarOpen && 'translate-x-0',
         )}
       >
-        <div className="relative mb-9 grid justify-items-center border-b border-[#EBEBEB] pb-7 pt-4 text-center">
-          <div className="mt-2 grid h-20 w-20 place-items-center rounded-[24px] bg-[#FF385C] text-white shadow-[0_10px_28px_rgba(255,56,92,0.24)]">
-            <GraduationCap size={42} strokeWidth={1.65} />
+        {/* Brand */}
+        <div className="relative mb-8 grid justify-items-center border-b border-white/8 pb-7 pt-4 text-center">
+          <div className="mt-2 grid h-[72px] w-[72px] place-items-center rounded-2xl bg-gradient-to-br from-[#FF385C] to-[#FF6B81] text-white shadow-[0_8px_32px_rgba(255,56,92,0.35)]">
+            <GraduationCap size={38} strokeWidth={1.65} />
           </div>
-          <strong className="mt-4 block text-[17px] font-semibold leading-tight text-[#222222]">
+          <strong className="mt-4 block text-[17px] font-bold leading-tight text-white">
             Coordinator
           </strong>
-          <span className="mt-1 block text-sm text-[#717171]">Manager</span>
+          <span className="mt-0.5 block text-sm font-medium text-slate-400">Manager</span>
           <button
-            aria-label="Cerrar menú lateral"
-            className={cn(iconButton, 'absolute right-0 top-0 md:hidden')}
+            aria-label="Cerrar menu lateral"
+            className={cn(iconButton, 'absolute right-0 top-0 border-white/10 bg-white/5 text-white hover:bg-white/10 md:hidden')}
             onClick={closeSidebar}
             type="button"
           >
@@ -58,7 +59,8 @@ export function Sidebar() {
           </button>
         </div>
 
-        <nav aria-label="Principal" className="grid gap-2">
+        {/* Navigation */}
+        <nav aria-label="Principal" className="grid gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon
 
@@ -66,10 +68,10 @@ export function Sidebar() {
               <NavLink
                 className={({ isActive }) =>
                   cn(
-                    'flex h-12 items-center gap-3 rounded-full px-4 text-left text-[15px] font-medium transition',
+                    'flex h-11 items-center gap-3 rounded-xl px-4 text-left text-[14px] font-semibold transition-all duration-200',
                     isActive
-                      ? 'bg-[#222222] text-white shadow-[0_3px_12px_rgba(0,0,0,0.08)]'
-                      : 'text-[#717171] hover:bg-[#F7F7F7] hover:text-[#222222]',
+                      ? 'bg-gradient-to-r from-[#FF385C] to-[#FF5A79] text-white shadow-[0_4px_16px_rgba(255,56,92,0.30)]'
+                      : 'text-slate-400 hover:bg-white/6 hover:text-white',
                   )
                 }
                 key={item.href}
@@ -83,21 +85,27 @@ export function Sidebar() {
           })}
         </nav>
 
+        {/* Logout */}
         <button
-          className="mt-auto flex h-12 items-center gap-3 rounded-full border border-[#DDDDDD] px-4 text-[15px] font-medium text-[#222222] transition hover:border-[#222222] hover:bg-[#F7F7F7]"
+          className="mt-auto flex h-11 items-center gap-3 rounded-xl border border-white/8 px-4 text-[14px] font-semibold text-slate-400 transition-all duration-200 hover:border-[#FF385C]/40 hover:bg-[#FF385C]/8 hover:text-white"
           onClick={handleLogout}
           type="button"
         >
           <LogOut size={18} strokeWidth={1.8} />
-          Cerrar sesión
+          Cerrar sesion
         </button>
       </aside>
 
-      <button
-        aria-label="Cerrar menú"
-        className={cn('fixed inset-0 z-20 hidden bg-black/50', isSidebarOpen && 'block md:hidden')}
+      {/* Mobile overlay */}
+      <div
+        aria-label="Cerrar menu"
+        className={cn(
+          'fixed inset-0 z-20 bg-black/60 backdrop-blur-sm transition-opacity duration-300',
+          isSidebarOpen ? 'block md:hidden' : 'pointer-events-none hidden',
+        )}
         onClick={closeSidebar}
-        type="button"
+        role="button"
+        tabIndex={-1}
       />
     </>
   )
