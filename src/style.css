@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
+@import "tailwindcss";
+
+@keyframes studio-progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 44px 0;
+  }
+}
+
+.studio-progress-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.24) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.24) 50%,
+    rgba(255, 255, 255, 0.24) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 22px 22px;
+  animation: studio-progress-stripes 0.85s linear infinite;
+}
