@@ -3,7 +3,7 @@ import { streamAgentFlow, type AgentStreamEvent } from '../../../../data'
 import { SectionData } from './layout/section-data'
 import { SectionProcess } from './layout/section-process'
 import { SectionQuery } from './layout/section-query'
-import type { TimelineItem } from './layout/studio-types'
+import type { TimelineItem, TimelinePane } from './layout/studio-types'
 
 const DEFAULT_PROMPT = 'Quiero crear horarios para los estudiantes de decimo ciclo de ingenieria de software'
 
@@ -42,12 +42,29 @@ export function StudioPage() {
   const timelineRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    timelineRef.current?.scrollTo({ behavior: 'smooth', left: timelineRef.current.scrollWidth })
+    timelineRef.current?.scrollTo({ behavior: 'smooth', top: timelineRef.current.scrollHeight })
   }, [events.length])
 
   const selectedItem = events.find((event) => event.id === selectedEventId) ?? events[events.length - 1] ?? null
-  const selectedDetail = selectedItem?.detail?.trim() ?? ''
+  const selectedPane = selectedItem?.selectedPane ?? 'response'
+  const selectedDetail =
+    selectedPane === 'params'
+      ? selectedItem?.paramsDetail?.trim() ?? selectedItem?.detail?.trim() ?? ''
+      : selectedItem?.responseDetail?.trim() ?? selectedItem?.detail?.trim() ?? ''
   const selectedMarkdown = selectedDetail || answer
+
+  function handleSelectEvent(id: string, pane?: TimelinePane) {
+    setSelectedEventId(id)
+    if (pane) {
+      setEvents((current) =>
+        current.map((item) =>
+          item.id === id
+            ? { ...item, selectedPane: pane }
+            : item,
+        ),
+      )
+    }
+  }
 
   function buildTimelineItems(eventName: string, event: AgentStreamEvent): TimelineItem[] {
     const node = event.node || event.type || eventName
@@ -85,6 +102,42 @@ export function StudioPage() {
 
   function appendEvent(eventName: string, event: AgentStreamEvent) {
     const eventDetail = getEventDetail(event)
+
+    if (event.type === 'tool_call') {
+      const toolCallId = event.tool_call_id || `${event.tool_name ?? 'tool'}-${Date.now()}`
+      const pane = event.phase === 'request' ? 'params' : 'response'
+
+      setEvents((current) => {
+        const existingIndex = current.findIndex((item) => item.toolCallId === toolCallId)
+        const existing = existingIndex >= 0 ? current[existingIndex] : null
+        const item: TimelineItem = {
+          description: event.description ?? existing?.description,
+          detail: eventDetail || existing?.detail,
+          eventName,
+          id: existing?.id ?? toolCallId,
+          label: event.label ?? existing?.label ?? event.tool_name ?? 'Herramienta',
+          node: 'call_tools',
+          paramsDetail: event.phase === 'request' ? eventDetail : existing?.paramsDetail,
+          payload: event.payload ?? existing?.payload,
+          responseDetail: event.phase === 'response' ? eventDetail : existing?.responseDetail,
+          selectedPane: event.phase === 'response' ? 'response' : existing?.selectedPane ?? pane,
+          status: event.phase === 'response' ? 'completed' : existing?.status ?? 'running',
+          tone: event.tone ?? existing?.tone,
+          toolCallId,
+          toolName: event.tool_name ?? existing?.toolName,
+          type: 'tool_call',
+        }
+
+        if (!selectedEventId) setSelectedEventId(item.id)
+        if (existingIndex >= 0) {
+          const next = [...current]
+          next[existingIndex] = item
+          return next
+        }
+        return [...current, item]
+      })
+      return
+    }
 
     if ((event.node || event.type || eventName) === 'call_tools') {
       setEvents((current) => {
@@ -181,29 +234,30 @@ export function StudioPage() {
   }
 
   return (
-    <section className="grid gap-6">
-      <SectionQuery
-        isStreaming={isStreaming}
-        onPromptChange={setPrompt}
-        onStart={handleStart}
-        prompt={prompt}
-      />
-
+    <section className="grid gap-4">
       {error && <div className="rounded-[8px] border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div>}
 
-      <div className="grid gap-6">
-        <SectionProcess
-          events={events}
-          getStepHelper={getStepHelper}
-          isStreaming={isStreaming}
-          onSelectEvent={setSelectedEventId}
-          selectedItem={selectedItem}
-          timelineRef={timelineRef}
-        />
+      <div className="grid min-h-[calc(100vh-150px)] gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(300px,1fr)]">
         <SectionData
           selectedItem={selectedItem}
           selectedMarkdown={selectedMarkdown}
         />
+        <aside className="grid content-start gap-4">
+          <SectionQuery
+            isStreaming={isStreaming}
+            onPromptChange={setPrompt}
+            onStart={handleStart}
+            prompt={prompt}
+          />
+          <SectionProcess
+            events={events}
+            getStepHelper={getStepHelper}
+            isStreaming={isStreaming}
+            onSelectEvent={handleSelectEvent}
+            selectedItem={selectedItem}
+            timelineRef={timelineRef}
+          />
+        </aside>
       </div>
     </section>
   )

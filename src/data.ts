@@ -115,11 +115,15 @@ export type AgentStreamEvent = {
   label?: string
   message?: string
   node?: string
+  phase?: 'request' | 'response'
   payload?: {
     text: string
   }
   status?: string
   tone?: string
+  tool_args?: Record<string, unknown>
+  tool_call_id?: string
+  tool_name?: string
   type?: string
 }
 
