@@ -66,9 +66,8 @@ export type CareerStats = CareerDistribution & {
   total_credits: number
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000/api/academic'
-const AGENT_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/agent')
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL + '/api/academic'
+const AGENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL + '/api/agent'
 
 type PaginatedResponse<T> = {
   results: T[]
@@ -127,11 +126,75 @@ export type AgentStreamEvent = {
   type?: string
 }
 
+export type AgentStudioRunRecord = {
+  answer: string
+  createdAt: string
+  events: unknown[]
+  id: string
+  prompt: string
+  selectedEventId: string | null
+  status: 'completed' | 'error'
+}
+
+export type AgentBotConfig = {
+  createdAt: string
+  enabled: boolean
+  id: number
+  model: string
+  name: string
+  prompt: string
+  updatedAt: string
+}
+
 type StreamAgentFlowOptions = {
   chatId?: number | null
   message: string
   onEvent: (eventName: string, event: AgentStreamEvent) => void
   signal?: AbortSignal
+}
+
+async function loadAgentObject<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${AGENT_API_BASE_URL}/${path}`, options)
+
+  if (!response.ok) {
+    throw new Error(`No se pudo completar la solicitud ${path}`)
+  }
+
+  return response.json()
+}
+
+export const agentBotApi = {
+  get: () => loadAgentObject<AgentBotConfig>('bot/'),
+  update: (payload: Pick<AgentBotConfig, 'enabled' | 'prompt'>) =>
+    loadAgentObject<AgentBotConfig>('bot/update/', {
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+    }),
+}
+
+export const agentStudioHistoryApi = {
+  clear: async () => {
+    const response = await fetch(`${AGENT_API_BASE_URL}/studio-runs/clear/`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      throw new Error('No se pudo limpiar el historial de Studio IA.')
+    }
+  },
+  create: (run: Omit<AgentStudioRunRecord, 'createdAt' | 'id'>) =>
+    loadAgentObject<AgentStudioRunRecord>('studio-runs/create/', {
+      body: JSON.stringify(run),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }),
+  get: (id: string) => loadAgentObject<AgentStudioRunRecord>(`studio-runs/${id}/`),
+  list: () => loadAgentObject<AgentStudioRunRecord[]>('studio-runs/?limit=100'),
 }
 
 function parseSseChunk(buffer: string) {

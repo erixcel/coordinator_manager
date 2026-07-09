@@ -14,42 +14,31 @@ const NODE_ICONS: Record<string, typeof Database> = {
 }
 
 type SectionProcessProps = {
+  className?: string
   events: TimelineItem[]
   getStepHelper: (item?: TimelineItem | null) => string
-  isStreaming: boolean
+  listClassName?: string
   onSelectEvent: (id: string, pane?: TimelinePane) => void
   selectedItem: TimelineItem | null
   timelineRef: RefObject<HTMLDivElement | null>
 }
 
 export function SectionProcess({
+  className,
   events,
   getStepHelper,
-  isStreaming,
+  listClassName,
   onSelectEvent,
   selectedItem,
   timelineRef,
 }: SectionProcessProps) {
   return (
-    <div className="grid gap-3">
-      <div className="h-2 overflow-hidden rounded-full bg-[#E9EEF5]">
-        <div
-          className={cn(
-            'h-full rounded-full bg-[#FF385C] transition-[width] duration-500',
-            isStreaming && 'studio-progress-striped',
-          )}
-          style={{
-            animationPlayState: isStreaming ? 'running' : 'paused',
-            width: isStreaming ? '72%' : events.length > 0 ? '100%' : '0%',
-          }}
-        />
-      </div>
-
-      <div className={cn(panel, 'overflow-hidden rounded-[8px]')}>
-        <div className="border-b border-[#EBEBEB] px-4 py-3">
+    <div className={cn('grid min-w-0 gap-3', className)}>
+      <div className={cn(panel, 'overflow-hidden rounded-[8px] h-full flex flex-col')}>
+        <div className="border-b border-[#EBEBEB] px-4 py-3 shrink-0">
           <h2 className="text-sm font-black uppercase tracking-[0.14em] text-[#8EA0B8]">Pasos ejecutados</h2>
         </div>
-        <div ref={timelineRef} className="max-h-[calc(100vh-430px)] min-h-[260px] overflow-y-auto px-3 py-3">
+        <div ref={timelineRef} className={cn('max-h-[calc(100vh-430px)] min-h-[260px] overflow-y-auto px-3 py-3 flex-1', listClassName)}>
           {events.length === 0 ? (
             <div className="grid min-h-[220px] place-items-center rounded-[8px] border border-dashed border-[#DDDDDD] px-4 text-center">
               <div>
@@ -102,7 +91,7 @@ export function SectionProcess({
                               </span>
                             </div>
                             <strong className="mt-2 block text-[13px] font-black leading-[18px] text-[#152033]">{event.label}</strong>
-                            <p className="mt-1 line-clamp-1 text-[11px] font-bold leading-[18px] text-[#6B7A90]">
+                            <p className="mt-1 break-words text-[11px] font-bold leading-[18px] text-[#6B7A90]">
                               {event.toolName ?? 'tool'}
                             </p>
                           </div>
@@ -176,7 +165,7 @@ export function SectionProcess({
                               </span>
                             </div>
                             <strong className="mt-2.5 block text-[13px] font-black leading-[18px] text-[#152033]">{event.label}</strong>
-                            <p className="mt-1.5 line-clamp-2 text-[11px] font-bold leading-[18px] text-[#6B7A90]">
+                            <p className="mt-1.5 break-words text-[11px] font-bold leading-[18px] text-[#6B7A90]">
                               {getStepHelper(event)}
                             </p>
                           </div>

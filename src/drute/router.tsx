@@ -1,8 +1,10 @@
 import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AdminLayout } from '../modules/admin/layout/admin-layout'
+import { AgentePage } from '../modules/admin/content/agente/agente-page'
 import { CarrerasPage } from '../modules/admin/content/carreras/carreras-page'
 import { CursosPage } from '../modules/admin/content/cursos/cursos-page'
 import { EstudiantesPage } from '../modules/admin/content/estudiantes/estudiantes-page'
+import { HistorialIaPage } from '../modules/admin/content/historial-ia/historial-ia-page'
 import { ProfesoresPage } from '../modules/admin/content/profesores/profesores-page'
 import { ResumenPage } from '../modules/admin/content/resumen/resumen-page'
 import { StudioPage } from '../modules/admin/content/studio/studio-page'
@@ -59,8 +61,20 @@ const router = createBrowserRouter([
         element: <CursosPage />,
       },
       {
+        path: 'agente',
+        element: <AgentePage />,
+      },
+      {
         path: 'studio',
         element: <StudioPage />,
+      },
+      {
+        path: 'historial-ia',
+        element: <HistorialIaPage />,
+      },
+      {
+        path: 'historial-ia/:runId',
+        element: <HistorialIaPage />,
       },
     ],
   },

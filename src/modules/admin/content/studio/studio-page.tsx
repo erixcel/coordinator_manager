@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { streamAgentFlow, type AgentStreamEvent } from '../../../../data'
+import { agentStudioHistoryApi, streamAgentFlow, type AgentStreamEvent } from '../../../../data'
 import { SectionData } from './layout/section-data'
 import { SectionProcess } from './layout/section-process'
 import { SectionQuery } from './layout/section-query'
-import type { TimelineItem, TimelinePane } from './layout/studio-types'
+import type { StudioRun, TimelineItem, TimelinePane } from './layout/studio-types'
 
 const DEFAULT_PROMPT = 'Quiero crear horarios para los estudiantes de decimo ciclo de ingenieria de software'
 
@@ -31,6 +31,27 @@ function getStepHelper(item?: TimelineItem | null) {
   return item.description ?? 'Resultado obtenido durante la creacion del horario.'
 }
 
+function getPreferredPersistedEventId(events: TimelineItem[], selectedEventId: string | null) {
+  const selectedEvent = events.find((event) => event.id === selectedEventId)
+  const previewEvent = [...events]
+    .reverse()
+    .find((event) => event.toolName === 'crear_preview_horarios' && (event.responseDetail || event.detail))
+  const finalAgentEvent = [...events]
+    .reverse()
+    .find((event) => event.node === 'call_agent' && (event.detail || event.responseDetail))
+
+  if (!selectedEvent) {
+    return previewEvent?.id ?? finalAgentEvent?.id ?? events[events.length - 1]?.id ?? null
+  }
+
+  const selectedIndex = events.findIndex((event) => event.id === selectedEvent.id)
+  const isEarlyAutoSelection = selectedEvent.type === 'tool_call' && selectedIndex >= 0 && selectedIndex <= 2 && Boolean(previewEvent)
+
+  return isEarlyAutoSelection
+    ? previewEvent?.id ?? selectedEvent.id
+    : selectedEvent.id
+}
+
 export function StudioPage() {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT)
   const [events, setEvents] = useState<TimelineItem[]>([])
@@ -39,11 +60,39 @@ export function StudioPage() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const answerRef = useRef('')
+  const eventsRef = useRef<TimelineItem[]>([])
+  const selectedEventIdRef = useRef<string | null>(null)
   const timelineRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     timelineRef.current?.scrollTo({ behavior: 'smooth', top: timelineRef.current.scrollHeight })
   }, [events.length])
+
+  useEffect(() => {
+    eventsRef.current = events
+  }, [events])
+
+  useEffect(() => {
+    answerRef.current = answer
+  }, [answer])
+
+  useEffect(() => {
+    selectedEventIdRef.current = selectedEventId
+  }, [selectedEventId])
+
+  function updateEvents(updater: (current: TimelineItem[]) => TimelineItem[]) {
+    setEvents((current) => {
+      const next = updater(current)
+      eventsRef.current = next
+      return next
+    })
+  }
+
+  function updateAnswer(value: string) {
+    answerRef.current = value
+    setAnswer(value)
+  }
 
   const selectedItem = events.find((event) => event.id === selectedEventId) ?? events[events.length - 1] ?? null
   const selectedPane = selectedItem?.selectedPane ?? 'response'
@@ -54,9 +103,10 @@ export function StudioPage() {
   const selectedMarkdown = selectedDetail || answer
 
   function handleSelectEvent(id: string, pane?: TimelinePane) {
+    selectedEventIdRef.current = id
     setSelectedEventId(id)
     if (pane) {
-      setEvents((current) =>
+      updateEvents((current) =>
         current.map((item) =>
           item.id === id
             ? { ...item, selectedPane: pane }
@@ -107,7 +157,7 @@ export function StudioPage() {
       const toolCallId = event.tool_call_id || `${event.tool_name ?? 'tool'}-${Date.now()}`
       const pane = event.phase === 'request' ? 'params' : 'response'
 
-      setEvents((current) => {
+      updateEvents((current) => {
         const existingIndex = current.findIndex((item) => item.toolCallId === toolCallId)
         const existing = existingIndex >= 0 ? current[existingIndex] : null
         const item: TimelineItem = {
@@ -128,7 +178,10 @@ export function StudioPage() {
           type: 'tool_call',
         }
 
-        if (!selectedEventId) setSelectedEventId(item.id)
+        if (!selectedEventIdRef.current) {
+          selectedEventIdRef.current = item.id
+          setSelectedEventId(item.id)
+        }
         if (existingIndex >= 0) {
           const next = [...current]
           next[existingIndex] = item
@@ -140,7 +193,7 @@ export function StudioPage() {
     }
 
     if ((event.node || event.type || eventName) === 'call_tools') {
-      setEvents((current) => {
+      updateEvents((current) => {
         const next = [...current]
         if (!eventDetail) return current
 
@@ -156,13 +209,16 @@ export function StudioPage() {
           tone: event.tone,
           type: 'tool',
         }
-        if (!selectedEventId) setSelectedEventId(item.id)
+        if (!selectedEventIdRef.current) {
+          selectedEventIdRef.current = item.id
+          setSelectedEventId(item.id)
+        }
         return [...next, item]
       })
     } else {
       const items = buildTimelineItems(eventName, event)
       if (items.length > 0) {
-        setEvents((current) => {
+        updateEvents((current) => {
           const next = [...current]
           const uniqueItems: TimelineItem[] = []
 
@@ -191,7 +247,8 @@ export function StudioPage() {
           })
 
           if (uniqueItems.length === 0) return current
-          if (!selectedEventId) {
+          if (!selectedEventIdRef.current) {
+            selectedEventIdRef.current = uniqueItems[0].id
             setSelectedEventId(uniqueItems[0].id)
           }
           return [...next, ...uniqueItems]
@@ -200,8 +257,12 @@ export function StudioPage() {
     }
 
     if (event.type === 'result' && eventDetail) {
-      setAnswer(eventDetail)
+      updateAnswer(eventDetail)
     }
+  }
+
+  async function persistRun(run: Omit<StudioRun, 'createdAt' | 'id'>) {
+    await agentStudioHistoryApi.create(run)
   }
 
   async function handleStart() {
@@ -210,23 +271,46 @@ export function StudioPage() {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
+    const runPrompt = prompt.trim()
 
-    setAnswer('')
+    updateAnswer('')
     setError('')
+    eventsRef.current = []
     setEvents([])
     setIsStreaming(true)
+    selectedEventIdRef.current = null
     setSelectedEventId(null)
 
     try {
       await streamAgentFlow({
         chatId: null,
-        message: prompt.trim(),
+        message: runPrompt,
         onEvent: appendEvent,
         signal: controller.signal,
       })
+      if (!controller.signal.aborted && eventsRef.current.length > 0) {
+        const persistedSelectedEventId = getPreferredPersistedEventId(eventsRef.current, selectedEventIdRef.current)
+        await persistRun({
+          answer: answerRef.current,
+          events: eventsRef.current,
+          prompt: runPrompt,
+          selectedEventId: persistedSelectedEventId,
+          status: 'completed',
+        })
+      }
     } catch (streamError) {
       if (!controller.signal.aborted) {
         setError(streamError instanceof Error ? streamError.message : 'No se pudo completar el flujo IA.')
+        if (eventsRef.current.length > 0) {
+          const persistedSelectedEventId = getPreferredPersistedEventId(eventsRef.current, selectedEventIdRef.current)
+          await persistRun({
+            answer: answerRef.current,
+            events: eventsRef.current,
+            prompt: runPrompt,
+            selectedEventId: persistedSelectedEventId,
+            status: 'error',
+          })
+        }
       }
     } finally {
       if (!controller.signal.aborted) setIsStreaming(false)
@@ -237,12 +321,15 @@ export function StudioPage() {
     <section className="grid gap-4">
       {error && <div className="rounded-[8px] border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">{error}</div>}
 
-      <div className="grid min-h-[calc(100vh-150px)] gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(300px,1fr)]">
+      <div className="grid h-[calc(100dvh_-_150px)] min-h-[360px] min-w-0 max-w-full gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(300px,1fr)]">
         <SectionData
+          bodyClassName="h-[calc(100%_-_66px)] max-h-none"
+          className="!min-h-0 h-full min-w-0"
+          emptyClassName="h-[calc(100%_-_66px)] min-h-0"
           selectedItem={selectedItem}
           selectedMarkdown={selectedMarkdown}
         />
-        <aside className="grid content-start gap-4">
+        <aside className="grid h-full min-h-0 grid-rows-[auto_1fr] gap-4">
           <SectionQuery
             isStreaming={isStreaming}
             onPromptChange={setPrompt}
@@ -250,9 +337,10 @@ export function StudioPage() {
             prompt={prompt}
           />
           <SectionProcess
+            className="h-full min-w-0 !min-h-0"
             events={events}
             getStepHelper={getStepHelper}
-            isStreaming={isStreaming}
+            listClassName="flex-1 !max-h-none min-h-0"
             onSelectEvent={handleSelectEvent}
             selectedItem={selectedItem}
             timelineRef={timelineRef}

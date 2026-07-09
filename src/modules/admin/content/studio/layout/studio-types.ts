@@ -19,3 +19,13 @@ export type TimelineItem = {
   toolName?: string
   type: string
 }
+
+export type StudioRun = {
+  answer: string
+  createdAt: string
+  events: TimelineItem[]
+  id: string
+  prompt: string
+  selectedEventId: string | null
+  status: 'completed' | 'error'
+}
