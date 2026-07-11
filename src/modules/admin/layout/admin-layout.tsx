@@ -6,10 +6,12 @@ import { shell } from '../shared/styles'
 
 export function AdminLayout() {
   const error = useAdminStore((state) => state.error)
+  const accessToken = useAdminStore((state) => state.accessToken)
   const isAuthenticated = useAdminStore((state) => state.isAuthenticated)
   const isLoading = useAdminStore((state) => Object.values(state.loading).some(Boolean))
+  const user = useAdminStore((state) => state.user)
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !accessToken || user?.role !== 'admin') {
     return <Navigate replace to="/auth/sign-in" />
   }
 

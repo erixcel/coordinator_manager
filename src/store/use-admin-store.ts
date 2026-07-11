@@ -1,13 +1,15 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { academicApi } from '../data'
+import { academicApi, authApi } from '../data'
 import type { AcademicSummary, Career, CareerStats, Course, Student, Teacher } from '../data'
+import type { AuthUser } from '../data'
 
 type ResourceKey = 'summary' | 'teachers' | 'students' | 'careers' | 'courses' | 'careerStats'
 
 type LoadedState = Record<ResourceKey, boolean>
 
 type AdminState = {
+  accessToken: string
   careerStats: CareerStats[]
   careers: Career[]
   courses: Course[]
@@ -16,9 +18,11 @@ type AdminState = {
   isSidebarOpen: boolean
   loading: Partial<Record<ResourceKey, boolean>>
   loaded: LoadedState
+  refreshToken: string
   students: Student[]
   summary: AcademicSummary | null
   teachers: Teacher[]
+  user: AuthUser | null
   clearError: () => void
   closeSidebar: () => void
   loadCareerStats: (force?: boolean) => Promise<void>
@@ -29,7 +33,7 @@ type AdminState = {
   loadTeachers: (force?: boolean) => Promise<void>
   logout: () => void
   openSidebar: () => void
-  signIn: () => void
+  signIn: (email: string, password: string) => Promise<void>
   toggleSidebar: () => void
 }
 
@@ -86,6 +90,7 @@ export const useAdminStore = create<AdminState>()(
       }
 
       return {
+        accessToken: '',
         careerStats: [],
         careers: [],
         courses: [],
@@ -94,9 +99,11 @@ export const useAdminStore = create<AdminState>()(
         isSidebarOpen: false,
         loaded: initialLoaded,
         loading: {},
+        refreshToken: '',
         students: [],
         summary: null,
         teachers: [],
+        user: null,
         clearError: () => set({ error: '' }),
         closeSidebar: () => set({ isSidebarOpen: false }),
         loadCareerStats: (force = false) =>
@@ -113,16 +120,56 @@ export const useAdminStore = create<AdminState>()(
           runResource('summary', force, academicApi.getSummary, (summary) => ({ summary })),
         loadTeachers: (force = false) =>
           runResource('teachers', force, academicApi.getTeachers, (teachers) => ({ teachers })),
-        logout: () => set({ isAuthenticated: false, isSidebarOpen: false }),
+        logout: () =>
+          set({
+            accessToken: '',
+            careerStats: [],
+            careers: [],
+            courses: [],
+            isAuthenticated: false,
+            isSidebarOpen: false,
+            loaded: initialLoaded,
+            refreshToken: '',
+            students: [],
+            summary: null,
+            teachers: [],
+            user: null,
+          }),
         openSidebar: () => set({ isSidebarOpen: true }),
-        signIn: () => set({ isAuthenticated: true }),
+        signIn: async (email, password) => {
+          set({ error: '' })
+
+          try {
+            const session = await authApi.login(email, password)
+
+            if (session.user.role !== 'admin') {
+              throw new Error('Esta cuenta no tiene permiso para entrar al panel administrativo.')
+            }
+
+            set({
+              accessToken: session.accessToken,
+              error: '',
+              isAuthenticated: true,
+              loaded: initialLoaded,
+              refreshToken: session.refreshToken,
+              user: session.user,
+            })
+          } catch (error) {
+            const message = getErrorMessage(error)
+            set({ error: message, isAuthenticated: false })
+            throw new Error(message)
+          }
+        },
         toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       }
     },
     {
       name: 'coordinator-manager-admin',
       partialize: (state) => ({
+        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
+        refreshToken: state.refreshToken,
+        user: state.user,
       }),
     },
   ),

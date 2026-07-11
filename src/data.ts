@@ -66,8 +66,38 @@ export type CareerStats = CareerDistribution & {
   total_credits: number
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL + '/api/academic'
-const AGENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL + '/api/agent'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000/api/academic'
+const AGENT_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/agent')
+const AUTH_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/auth')
+export const AUTH_STORAGE_KEY = 'coordinator-manager-admin'
+
+export type AuthRole = 'admin' | 'student' | ''
+
+export type AuthUser = {
+  email: string
+  first_name: string
+  id: number
+  is_staff: boolean
+  last_name: string
+  role: AuthRole
+  student_id: number | null
+  username: string
+}
+
+export type AuthSession = {
+  accessToken: string
+  refreshToken: string
+  user: AuthUser
+}
+
+export type RegisterStudentInput = {
+  confirmPassword: string
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+}
 
 type PaginatedResponse<T> = {
   results: T[]
@@ -77,9 +107,97 @@ function unwrapList<T>(payload: T[] | PaginatedResponse<T>): T[] {
   return Array.isArray(payload) ? payload : payload.results
 }
 
+function getStoredAuthSession(): Partial<AuthSession> | null {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as { state?: Partial<AuthSession> }
+    return parsed.state ?? null
+  } catch {
+    return null
+  }
+}
+
+function updateStoredAuthTokens(accessToken: string, refreshToken?: string) {
+  if (typeof window === 'undefined') return
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY)
+    if (!raw) return
+
+    const parsed = JSON.parse(raw) as { state?: Record<string, unknown>; version?: number }
+    const currentState = parsed.state ?? {}
+    window.localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        ...parsed,
+        state: {
+          ...currentState,
+          accessToken,
+          ...(refreshToken ? { refreshToken } : {}),
+        },
+      }),
+    )
+  } catch {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY)
+  }
+}
+
+async function refreshAccessToken() {
+  const session = getStoredAuthSession()
+  if (!session?.refreshToken) {
+    throw new Error('La sesion expiro. Vuelve a iniciar sesion.')
+  }
+
+  const response = await fetch(`${AUTH_API_BASE_URL}/token/refresh/`, {
+    body: JSON.stringify({ refresh: session.refreshToken }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    throw new Error('La sesion expiro. Vuelve a iniciar sesion.')
+  }
+
+  const payload = await response.json() as { access: string; refresh?: string }
+  updateStoredAuthTokens(payload.access, payload.refresh)
+  return payload.access
+}
+
+function withAuthHeaders(headers?: HeadersInit, accessToken?: string) {
+  const nextHeaders = new Headers(headers)
+  const token = accessToken ?? getStoredAuthSession()?.accessToken
+
+  if (token) {
+    nextHeaders.set('Authorization', `Bearer ${token}`)
+  }
+
+  return nextHeaders
+}
+
+async function fetchWithAuth(url: string, options: RequestInit = {}, retry = true): Promise<Response> {
+  const response = await fetch(url, {
+    ...options,
+    headers: withAuthHeaders(options.headers),
+  })
+
+  if (response.status !== 401 || !retry) {
+    return response
+  }
+
+  const accessToken = await refreshAccessToken()
+  return fetch(url, {
+    ...options,
+    headers: withAuthHeaders(options.headers, accessToken),
+  })
+}
+
 async function loadApiList<T>(path: string): Promise<T[]> {
   const url = `${API_BASE_URL}/${path}/?all=true`
-  const response = await fetch(url)
+  const response = await fetchWithAuth(url)
 
   if (!response.ok) {
     throw new Error(`No se pudo cargar ${url}`)
@@ -90,7 +208,7 @@ async function loadApiList<T>(path: string): Promise<T[]> {
 
 async function loadApiObject<T>(path: string): Promise<T> {
   const url = `${API_BASE_URL}/${path}/`
-  const response = await fetch(url)
+  const response = await fetchWithAuth(url)
 
   if (!response.ok) {
     throw new Error(`No se pudo cargar ${url}`)
@@ -107,6 +225,61 @@ export const academicApi = {
   getStudents: () => loadApiList<Student>('students'),
   getSummary: () => loadApiObject<AcademicSummary>('summary'),
   getTeachers: () => loadApiList<Teacher>('teachers'),
+}
+
+export const authApi = {
+  async login(email: string, password: string): Promise<AuthSession> {
+    const response = await fetch(`${AUTH_API_BASE_URL}/token/`, {
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { detail?: string; non_field_errors?: string[] } | null
+      throw new Error(payload?.detail ?? payload?.non_field_errors?.[0] ?? 'Correo o contrasena incorrectos.')
+    }
+
+    const payload = await response.json() as { access: string; refresh: string; user: AuthUser }
+    return {
+      accessToken: payload.access,
+      refreshToken: payload.refresh,
+      user: payload.user,
+    }
+  },
+  async me(): Promise<AuthUser> {
+    const response = await fetchWithAuth(`${AUTH_API_BASE_URL}/me/`)
+
+    if (!response.ok) {
+      throw new Error('No se pudo validar la sesion actual.')
+    }
+
+    return response.json()
+  },
+  async registerStudent(input: RegisterStudentInput): Promise<{ message: string; user: AuthUser }> {
+    const response = await fetch(`${AUTH_API_BASE_URL}/register/`, {
+      body: JSON.stringify({
+        confirm_password: input.confirmPassword,
+        email: input.email,
+        first_name: input.firstName,
+        last_name: input.lastName,
+        password: input.password,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as Record<string, string[] | string> | null
+      const firstError = payload
+        ? Object.values(payload).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
+        : null
+
+      throw new Error(typeof firstError === 'string' ? firstError : 'No se pudo completar el registro.')
+    }
+
+    return response.json()
+  },
 }
 
 export type AgentStreamEvent = {
@@ -154,7 +327,7 @@ type StreamAgentFlowOptions = {
 }
 
 async function loadAgentObject<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${AGENT_API_BASE_URL}/${path}`, options)
+  const response = await fetchWithAuth(`${AGENT_API_BASE_URL}/${path}`, options)
 
   if (!response.ok) {
     throw new Error(`No se pudo completar la solicitud ${path}`)
@@ -177,7 +350,7 @@ export const agentBotApi = {
 
 export const agentStudioHistoryApi = {
   clear: async () => {
-    const response = await fetch(`${AGENT_API_BASE_URL}/studio-runs/clear/`, {
+    const response = await fetchWithAuth(`${AGENT_API_BASE_URL}/studio-runs/clear/`, {
       method: 'DELETE',
     })
 
@@ -223,7 +396,7 @@ function parseSseChunk(buffer: string) {
 }
 
 export async function streamAgentFlow({ chatId = null, message, onEvent, signal }: StreamAgentFlowOptions) {
-  const response = await fetch(`${AGENT_API_BASE_URL}/flow/stream/`, {
+  const response = await fetchWithAuth(`${AGENT_API_BASE_URL}/flow/stream/`, {
     body: JSON.stringify({ chat_id: chatId ?? 0, message }),
     headers: {
       Accept: 'text/event-stream',

@@ -4,6 +4,8 @@ import { cn, iconButton } from '../shared/styles'
 
 export function Navbar() {
   const openSidebar = useAdminStore((state) => state.openSidebar)
+  const user = useAdminStore((state) => state.user)
+  const userLabel = user?.first_name || user?.email || 'Admin'
 
   return (
     <header className="sticky top-0 z-10 border-b border-[#EBEBEB] bg-white/95 px-4 py-4 backdrop-blur md:px-8">
@@ -21,7 +23,7 @@ export function Navbar() {
         </div>
         <div className="hidden items-center gap-2 rounded-full border border-[#EBEBEB] bg-white px-4 py-2 text-sm font-medium text-[#222222] shadow-[0_1px_2px_rgba(0,0,0,0.08)] sm:flex">
           <ShieldCheck size={16} strokeWidth={1.8} />
-          Admin
+          {userLabel}
         </div>
       </div>
     </header>
