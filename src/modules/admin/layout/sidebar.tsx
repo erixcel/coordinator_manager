@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAdminStore } from '../../../store/use-admin-store'
+import { useAuthStore } from '../../../store/use-auth-store'
 import { cn, iconButton } from '../shared/styles'
 
 const navItems = [
@@ -28,10 +29,12 @@ const navItems = [
 export function Sidebar() {
   const closeSidebar = useAdminStore((state) => state.closeSidebar)
   const isSidebarOpen = useAdminStore((state) => state.isSidebarOpen)
-  const logout = useAdminStore((state) => state.logout)
+  const resetAdminState = useAdminStore((state) => state.resetAdminState)
+  const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
 
   function handleLogout() {
+    resetAdminState()
     logout()
     navigate('/auth/sign-in', { replace: true })
   }

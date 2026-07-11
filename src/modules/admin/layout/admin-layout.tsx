@@ -1,15 +1,16 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAdminStore } from '../../../store/use-admin-store'
+import { useAuthStore } from '../../../store/use-auth-store'
 import { Navbar } from './navbar'
 import { Sidebar } from './sidebar'
 import { shell } from '../shared/styles'
 
 export function AdminLayout() {
   const error = useAdminStore((state) => state.error)
-  const accessToken = useAdminStore((state) => state.accessToken)
-  const isAuthenticated = useAdminStore((state) => state.isAuthenticated)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const isLoading = useAdminStore((state) => Object.values(state.loading).some(Boolean))
-  const user = useAdminStore((state) => state.user)
+  const user = useAuthStore((state) => state.user)
 
   if (!isAuthenticated || !accessToken || user?.role !== 'admin') {
     return <Navigate replace to="/auth/sign-in" />

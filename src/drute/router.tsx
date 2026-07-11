@@ -9,6 +9,9 @@ import { ProfesoresPage } from '../modules/admin/content/profesores/profesores-p
 import { ResumenPage } from '../modules/admin/content/resumen/resumen-page'
 import { StudioPage } from '../modules/admin/content/studio/studio-page'
 import { SignInPage } from '../modules/auth/sign-in/sign-in-page'
+import { StudentHomePage } from '../modules/student/content/student-home-page'
+import { StudentPlaceholderPage } from '../modules/student/content/student-placeholder-page'
+import { StudentLayout } from '../modules/student/layout/student-layout'
 
 const router = createBrowserRouter([
   {
@@ -75,6 +78,56 @@ const router = createBrowserRouter([
       {
         path: 'historial-ia/:runId',
         element: <HistorialIaPage />,
+      },
+    ],
+  },
+  {
+    path: '/student',
+    element: <StudentLayout />,
+    children: [
+      {
+        index: true,
+        element: <Navigate replace to="/student/inicio" />,
+      },
+      {
+        path: 'inicio',
+        element: <StudentHomePage />,
+      },
+      {
+        path: 'horario',
+        element: (
+          <StudentPlaceholderPage
+            description="Aqui construiremos la vista tipo malla con el horario propuesto por el coordinador."
+            title="Mi horario"
+          />
+        ),
+      },
+      {
+        path: 'cursos',
+        element: (
+          <StudentPlaceholderPage
+            description="Aqui mostraremos los cursos sugeridos o asignados para la matricula del alumno."
+            title="Mis cursos"
+          />
+        ),
+      },
+      {
+        path: 'recomendaciones',
+        element: (
+          <StudentPlaceholderPage
+            description="Aqui viviran las recomendaciones y explicaciones de la IA para el estudiante."
+            title="Recomendaciones"
+          />
+        ),
+      },
+      {
+        path: 'exportar',
+        element: (
+          <StudentPlaceholderPage
+            description="Aqui prepararemos el resumen o prompt exportable con la propuesta de matricula."
+            title="Exportar propuesta"
+          />
+        ),
       },
     ],
   },

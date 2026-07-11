@@ -1,10 +1,11 @@
 import { Menu, ShieldCheck } from 'lucide-react'
 import { useAdminStore } from '../../../store/use-admin-store'
+import { useAuthStore } from '../../../store/use-auth-store'
 import { cn, iconButton } from '../shared/styles'
 
 export function Navbar() {
   const openSidebar = useAdminStore((state) => state.openSidebar)
-  const user = useAdminStore((state) => state.user)
+  const user = useAuthStore((state) => state.user)
   const userLabel = user?.first_name || user?.email || 'Admin'
 
   return (

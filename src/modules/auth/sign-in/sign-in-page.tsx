@@ -12,8 +12,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { authApi } from '../../../data'
-import { useAdminStore } from '../../../store/use-admin-store'
+import { useAuthStore } from '../../../store/use-auth-store'
 import { cn, shell } from '../../admin/shared/styles'
 
 type AuthMode = 'sign-in' | 'register'
@@ -35,10 +34,11 @@ const registerInitialState: RegisterFormState = {
 }
 
 export function SignInPage() {
-  const isAuthenticated = useAdminStore((state) => state.isAuthenticated)
-  const accessToken = useAdminStore((state) => state.accessToken)
-  const signIn = useAdminStore((state) => state.signIn)
-  const user = useAdminStore((state) => state.user)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const registerStudent = useAuthStore((state) => state.registerStudent)
+  const signIn = useAuthStore((state) => state.signIn)
+  const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
   const [mode, setMode] = useState<AuthMode>('sign-in')
   const [identifier, setIdentifier] = useState('')
@@ -78,8 +78,19 @@ export function SignInPage() {
     setIsSubmitting(true)
 
     try {
-      await signIn(identifier.trim(), password)
-      navigate('/admin/resumen', { replace: true })
+      const authenticatedUser = await signIn(identifier.trim(), password)
+
+      if (authenticatedUser.role === 'admin') {
+        navigate('/admin/resumen', { replace: true })
+        return
+      }
+
+      if (authenticatedUser.role === 'student') {
+        navigate('/student/inicio', { replace: true })
+        return
+      }
+
+      throw new Error('Esta cuenta no tiene un rol valido para continuar.')
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : 'No se pudo iniciar sesion.')
     } finally {
@@ -101,7 +112,7 @@ export function SignInPage() {
     setIsSubmitting(true)
 
     try {
-      await authApi.registerStudent({
+      await registerStudent({
         confirmPassword: registerForm.confirmPassword,
         email: registerForm.email.trim(),
         firstName: registerForm.firstName.trim(),
@@ -135,8 +146,13 @@ export function SignInPage() {
     }
   }
 
-  if (isAuthenticated && accessToken && user?.role === 'admin') {
-    return <Navigate replace to="/admin/resumen" />
+  if (isAuthenticated && accessToken) {
+    if (user?.role === 'admin') {
+      return <Navigate replace to="/admin/resumen" />
+    }
+    if (user?.role === 'student') {
+      return <Navigate replace to="/student/inicio" />
+    }
   }
 
   return (

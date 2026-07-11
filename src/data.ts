@@ -66,6 +66,29 @@ export type CareerStats = CareerDistribution & {
   total_credits: number
 }
 
+export type StudentContext = {
+  account: {
+    email: string
+    first_name: string
+    id: number
+    last_name: string
+    role: AuthRole
+    student_id: number | null
+  }
+  next_step: string
+  profile_completed: boolean
+  student: {
+    apellidos: string
+    carrera: string
+    carrera_id: number
+    ciclo_actual: number | null
+    codigo: string
+    estudiante_id: number
+    nombres: string
+    turno_preferido: string
+  } | null
+}
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000/api/academic'
 const AGENT_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/agent')
@@ -222,6 +245,7 @@ export const academicApi = {
   getCareerStats: () => loadApiList<CareerStats>('career-stats'),
   getCourses: () => loadApiList<Course>('courses'),
   getCurriculum: () => loadApiList<Curriculum>('curriculum'),
+  getStudentContext: () => loadApiObject<StudentContext>('student/context'),
   getStudents: () => loadApiList<Student>('students'),
   getSummary: () => loadApiObject<AcademicSummary>('summary'),
   getTeachers: () => loadApiList<Teacher>('teachers'),
