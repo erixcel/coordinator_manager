@@ -58,7 +58,7 @@ export function MarkdownResult({ text }: { text: string }) {
   }
 
   return (
-    <div className="grid gap-4 text-sm leading-6 text-[#5D6B82]">
+    <div className="grid min-w-0 gap-4 overflow-hidden text-sm leading-6 text-[#5D6B82]">
       <ReactMarkdown
         urlTransform={(url) => url}
         components={{
@@ -90,14 +90,14 @@ export function MarkdownResult({ text }: { text: string }) {
           p: ({ children }) => <p className="font-semibold text-[#5D6B82]">{children}</p>,
           strong: ({ children }) => <strong className="font-black text-[#344054]">{children}</strong>,
           table: ({ children }) => (
-            <div className="overflow-hidden rounded-[8px] border border-[#E7EDF5]">
+            <div className="max-w-full overflow-hidden rounded-[8px] border border-[#E7EDF5]">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[620px] border-collapse text-left text-sm">{children}</table>
               </div>
             </div>
           ),
           tbody: ({ children }) => <tbody>{children}</tbody>,
-          td: ({ children }) => <td className="border-b border-[#EEF2F7] px-4 py-3 font-semibold text-[#344054]">{children}</td>,
+          td: ({ children }) => <td className="max-w-[520px] break-words border-b border-[#EEF2F7] px-4 py-3 font-semibold text-[#344054]">{children}</td>,
           th: ({ children }) => <th className="border-b border-[#E7EDF5] px-4 py-3">{children}</th>,
           thead: ({ children }) => (
             <thead className="bg-[#F7F9FC] text-[11px] font-black uppercase tracking-[0.1em] text-[#8EA0B8]">

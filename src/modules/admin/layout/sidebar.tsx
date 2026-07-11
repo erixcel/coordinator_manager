@@ -1,7 +1,9 @@
 import {
   BookOpen,
+  Bot,
   BriefcaseBusiness,
   GraduationCap,
+  History,
   LayoutDashboard,
   LogOut,
   Sparkles,
@@ -18,7 +20,9 @@ const navItems = [
   { href: '/admin/estudiantes', label: 'Estudiantes', icon: Users },
   { href: '/admin/carreras', label: 'Carreras', icon: GraduationCap },
   { href: '/admin/cursos', label: 'Cursos', icon: BookOpen },
+  { href: '/admin/agente', label: 'Agente', icon: Bot },
   { href: '/admin/studio', label: 'Studio', icon: Sparkles },
+  { href: '/admin/historial-ia', label: 'Historial IA', icon: History },
 ]
 
 export function Sidebar() {
