@@ -25,6 +25,7 @@ type AdminState = {
   loadStudentsPage: (force?: boolean) => Promise<void>
   loadSummary: (force?: boolean) => Promise<void>
   loadTeachers: (force?: boolean) => Promise<void>
+  linkStudentAccount: (estudianteId: number, email: string) => Promise<void>
   openSidebar: () => void
   resetAdminState: () => void
   toggleSidebar: () => void
@@ -107,6 +108,19 @@ export const useAdminStore = create<AdminState>()((set, get) => {
           runResource('summary', force, academicApi.getSummary, (summary) => ({ summary })),
         loadTeachers: (force = false) =>
           runResource('teachers', force, academicApi.getTeachers, (teachers) => ({ teachers })),
+        linkStudentAccount: async (estudianteId, email) => {
+          set({ error: '' })
+
+          try {
+            await academicApi.linkStudentAccount({ email, estudianteId })
+            set((current) => ({ loaded: { ...current.loaded, students: false } }))
+            await get().loadStudentsPage(true)
+          } catch (error) {
+            const message = getErrorMessage(error)
+            set({ error: message })
+            throw new Error(message)
+          }
+        },
         openSidebar: () => set({ isSidebarOpen: true }),
         resetAdminState: () =>
           set({

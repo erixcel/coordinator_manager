@@ -1,13 +1,16 @@
 import { create } from 'zustand'
 import { academicApi } from '../data'
-import type { StudentContext } from '../data'
+import type { StudentContext, StudentScheduleProposal } from '../data'
 
 type StudentState = {
   context: StudentContext | null
   error: string
   isLoading: boolean
+  isScheduleLoading: boolean
   loadContext: (force?: boolean) => Promise<void>
+  loadScheduleProposal: (force?: boolean, proposalId?: number) => Promise<void>
   resetStudentState: () => void
+  scheduleProposal: StudentScheduleProposal | null
 }
 
 function getErrorMessage(error: unknown) {
@@ -18,6 +21,8 @@ export const useStudentStore = create<StudentState>()((set, get) => ({
   context: null,
   error: '',
   isLoading: false,
+  isScheduleLoading: false,
+  scheduleProposal: null,
   loadContext: async (force = false) => {
     const state = get()
 
@@ -37,5 +42,31 @@ export const useStudentStore = create<StudentState>()((set, get) => ({
       set({ error: getErrorMessage(error), isLoading: false })
     }
   },
-  resetStudentState: () => set({ context: null, error: '', isLoading: false }),
+  loadScheduleProposal: async (force = false, proposalId) => {
+    const state = get()
+
+    if (!force && state.scheduleProposal) {
+      return
+    }
+    if (state.isScheduleLoading) {
+      return
+    }
+
+    set({ error: '', isScheduleLoading: true })
+
+    try {
+      const scheduleProposal = await academicApi.getStudentScheduleProposal(proposalId)
+      set({ scheduleProposal, error: '', isScheduleLoading: false })
+    } catch (error) {
+      set({ error: getErrorMessage(error), isScheduleLoading: false })
+    }
+  },
+  resetStudentState: () =>
+    set({
+      context: null,
+      error: '',
+      isLoading: false,
+      isScheduleLoading: false,
+      scheduleProposal: null,
+    }),
 }))

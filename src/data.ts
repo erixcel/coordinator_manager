@@ -9,6 +9,8 @@ export type Teacher = {
 }
 
 export type Student = {
+  account_email?: string
+  account_username?: string
   estudiante_id: number
   codigo: string
   nombres: string
@@ -75,6 +77,26 @@ export type StudentContext = {
     role: AuthRole
     student_id: number | null
   }
+  alerts: Array<{
+    level: 'info' | 'warning' | 'error'
+    message: string
+    title: string
+  }>
+  courses: Array<{
+    codigo: string
+    creditos: number
+    curso_id: number
+    horas_semanales: number
+    nombre: string
+  }>
+  enrollment: {
+    course_count: number
+    label: string
+    proposal_id: number | null
+    status: string
+    summary: string
+    total_credits: number
+  }
   next_step: string
   profile_completed: boolean
   student: {
@@ -89,10 +111,58 @@ export type StudentContext = {
   } | null
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000/api/academic'
-const AGENT_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/agent')
-const AUTH_API_BASE_URL = API_BASE_URL.replace(/\/api\/academic$/, '/api/auth')
+export type StudentScheduleProposal = {
+  has_proposal: boolean
+  message: string
+  proposal: {
+    accepted_at: string | null
+    algoritmo: string
+    carrera: string
+    ciclo: number
+    created_at: string
+    estado: string
+    estado_label: string
+    fitness_score: number
+    metaheuristica: string
+    modelo_aprendizaje: string
+    propuesta_id: number
+    total_cursos: number
+    total_estudiantes: number
+    total_secciones: number
+  } | null
+  proposals: Array<{
+    created_at: string
+    estado: string
+    estado_label: string
+    fitness_score: number
+    metaheuristica: string
+    propuesta_id: number
+    total_cursos: number
+    total_secciones: number
+  }>
+  schedule: Array<{
+    aula: string
+    bloque: string
+    curso: string
+    curso_id: number
+    dia: string
+    docente: string
+    modalidad: string
+    seccion: number
+    turno: string
+  }>
+  sections: Array<{
+    cantidad_estudiantes: number
+    seccion: number
+    turno_preferido: string
+  }>
+}
+
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
+const API_ROOT_URL = rawApiBaseUrl.replace(/\/api\/academic$/, '').replace(/\/api$/, '')
+const API_BASE_URL = `${API_ROOT_URL}/api/academic`
+const AGENT_API_BASE_URL = `${API_ROOT_URL}/api/agent`
+const AUTH_API_BASE_URL = `${API_ROOT_URL}/api/auth`
 export const AUTH_STORAGE_KEY = 'coordinator-manager-admin'
 
 export type AuthRole = 'admin' | 'student' | ''
@@ -230,7 +300,7 @@ async function loadApiList<T>(path: string): Promise<T[]> {
 }
 
 async function loadApiObject<T>(path: string): Promise<T> {
-  const url = `${API_BASE_URL}/${path}/`
+  const url = `${API_BASE_URL}/${path}${path.includes('?') ? '' : '/'}`
   const response = await fetchWithAuth(url)
 
   if (!response.ok) {
@@ -246,9 +316,34 @@ export const academicApi = {
   getCourses: () => loadApiList<Course>('courses'),
   getCurriculum: () => loadApiList<Curriculum>('curriculum'),
   getStudentContext: () => loadApiObject<StudentContext>('student/context'),
+  getStudentScheduleProposal: (proposalId?: number) =>
+    loadApiObject<StudentScheduleProposal>(
+      proposalId ? `student/schedule-proposal?proposal_id=${proposalId}` : 'student/schedule-proposal',
+    ),
   getStudents: () => loadApiList<Student>('students'),
   getSummary: () => loadApiObject<AcademicSummary>('summary'),
   getTeachers: () => loadApiList<Teacher>('teachers'),
+  async linkStudentAccount(payload: { email: string; estudianteId: number }) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/students/link-account/`, {
+      body: JSON.stringify({
+        email: payload.email,
+        estudiante_id: payload.estudianteId,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as Record<string, string[] | string> | null
+      const firstError = data
+        ? Object.values(data).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
+        : null
+
+      throw new Error(typeof firstError === 'string' ? firstError : 'No se pudo vincular la cuenta.')
+    }
+
+    return response.json() as Promise<{ message: string; student: Student }>
+  },
 }
 
 export const authApi = {

@@ -11,6 +11,7 @@ import { StudioPage } from '../modules/admin/content/studio/studio-page'
 import { SignInPage } from '../modules/auth/sign-in/sign-in-page'
 import { StudentHomePage } from '../modules/student/content/student-home-page'
 import { StudentPlaceholderPage } from '../modules/student/content/student-placeholder-page'
+import { StudentSchedulePage } from '../modules/student/content/student-schedule-page'
 import { StudentLayout } from '../modules/student/layout/student-layout'
 
 const router = createBrowserRouter([
@@ -95,12 +96,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'horario',
-        element: (
-          <StudentPlaceholderPage
-            description="Aqui construiremos la vista tipo malla con el horario propuesto por el coordinador."
-            title="Mi horario"
-          />
-        ),
+        element: <StudentSchedulePage />,
       },
       {
         path: 'cursos',

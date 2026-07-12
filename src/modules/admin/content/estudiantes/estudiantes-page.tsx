@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { GraduationCap, Phone } from 'lucide-react'
+import { Link2, Mail, Phone, UserCheck, GraduationCap } from 'lucide-react'
 import type { Student } from '../../../../data'
 import { useAdminStore } from '../../../../store/use-admin-store'
 import { SearchField, SelectField } from '../../shared/controls'
@@ -37,10 +37,16 @@ function getInitials(name: string) {
 
 export function EstudiantesPage() {
   const careers = useAdminStore((state) => state.careers)
+  const linkStudentAccount = useAdminStore((state) => state.linkStudentAccount)
   const loadStudentsPage = useAdminStore((state) => state.loadStudentsPage)
   const students = useAdminStore((state) => state.students)
   const [query, setQuery] = useState('')
   const [careerId, setCareerId] = useState('all')
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [accountEmail, setAccountEmail] = useState('')
+  const [linkError, setLinkError] = useState('')
+  const [linkSuccess, setLinkSuccess] = useState('')
+  const [isLinking, setIsLinking] = useState(false)
 
   useEffect(() => {
     void loadStudentsPage()
@@ -68,6 +74,29 @@ export function EstudiantesPage() {
     })
     return counts
   }, [filtered])
+
+  async function handleLinkAccount() {
+    if (!selectedStudent) return
+    if (!accountEmail.trim()) {
+      setLinkError('Escribe el correo o usuario de la cuenta a vincular.')
+      return
+    }
+
+    setIsLinking(true)
+    setLinkError('')
+    setLinkSuccess('')
+
+    try {
+      await linkStudentAccount(selectedStudent.estudiante_id, accountEmail.trim())
+      setLinkSuccess(`Cuenta vinculada con ${fullName(selectedStudent)}.`)
+      setSelectedStudent(null)
+      setAccountEmail('')
+    } catch (error) {
+      setLinkError(error instanceof Error ? error.message : 'No se pudo vincular la cuenta.')
+    } finally {
+      setIsLinking(false)
+    }
+  }
 
   return (
     <section className="grid gap-6">
@@ -120,8 +149,61 @@ export function EstudiantesPage() {
         </div>
       </div>
 
+      {selectedStudent ? (
+        <div className="rounded-[8px] border border-[#E7EDF5] bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#8EA0B8]">Vincular cuenta</p>
+              <h3 className="mt-1 text-base font-black text-[#152033]">{fullName(selectedStudent)}</h3>
+              <p className="mt-1 text-sm font-semibold text-[#5D6B82]">
+                Codigo {selectedStudent.codigo} · {getCareerName(careers, selectedStudent.carrera_id)}
+              </p>
+            </div>
+            <div className="grid w-full gap-3 lg:max-w-[520px] lg:grid-cols-[1fr_auto_auto]">
+              <label className="flex h-12 items-center gap-3 rounded-full border border-[#E2E8F0] bg-white px-4 focus-within:border-[#0F172A]">
+                <Mail size={17} strokeWidth={1.8} className="text-[#8EA0B8]" />
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-[#152033] outline-none placeholder:text-[#8EA0B8]"
+                  onChange={(event) => setAccountEmail(event.target.value)}
+                  placeholder="correo o usuario de la cuenta"
+                  type="text"
+                  value={accountEmail}
+                />
+              </label>
+              <button
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#0F172A] px-5 text-sm font-black text-white transition hover:bg-[#1E293B] disabled:cursor-not-allowed disabled:bg-[#CBD5E1]"
+                disabled={isLinking}
+                onClick={handleLinkAccount}
+                type="button"
+              >
+                <Link2 size={16} strokeWidth={1.9} />
+                {isLinking ? 'Vinculando...' : 'Vincular'}
+              </button>
+              <button
+                className="inline-flex h-12 items-center justify-center rounded-full border border-[#E2E8F0] px-5 text-sm font-black text-[#5D6B82] transition hover:border-[#0F172A] hover:text-[#0F172A]"
+                onClick={() => {
+                  setSelectedStudent(null)
+                  setAccountEmail('')
+                  setLinkError('')
+                }}
+                type="button"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+          {linkError ? <p className="mt-3 text-sm font-bold text-[#C11331]">{linkError}</p> : null}
+        </div>
+      ) : null}
+
+      {linkSuccess ? (
+        <div className="rounded-[8px] border border-[#D1FADF] bg-[#ECFDF3] px-4 py-3 text-sm font-bold text-[#027A48]">
+          {linkSuccess}
+        </div>
+      ) : null}
+
       <DataTable
-        columns={['Código', 'Estudiante', 'Carrera Profesional', 'Mérito Académico', 'Teléfono']}
+        columns={['Código', 'Estudiante', 'Carrera Profesional', 'Mérito Académico', 'Teléfono', 'Cuenta']}
         rows={filtered.map((student) => {
           const name = fullName(student)
           return [
@@ -145,7 +227,31 @@ export function EstudiantesPage() {
             >
               <Phone size={13} className="text-[#8EA0B8]" />
               {student.telefono}
-            </a>
+            </a>,
+            student.account_email ? (
+              <span
+                key={`account-${student.estudiante_id}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#D1FADF] bg-[#ECFDF3] px-3 py-1 text-xs font-black text-[#027A48]"
+              >
+                <UserCheck size={13} strokeWidth={1.9} />
+                {student.account_email}
+              </span>
+            ) : (
+              <button
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-black text-[#475569] transition hover:border-[#0F172A] hover:text-[#0F172A]"
+                key={`account-${student.estudiante_id}`}
+                onClick={() => {
+                  setSelectedStudent(student)
+                  setAccountEmail('')
+                  setLinkError('')
+                  setLinkSuccess('')
+                }}
+                type="button"
+              >
+                <Link2 size={13} strokeWidth={1.9} />
+                Vincular
+              </button>
+            ),
           ]
         })}
       />
