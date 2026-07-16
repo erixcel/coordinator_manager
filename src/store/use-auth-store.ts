@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { AUTH_STORAGE_KEY, authApi } from '../data'
-import type { AuthSession, AuthUser, RegisterStudentInput } from '../data'
+import type { AuthSession, AuthUser } from '../data'
 
 type AuthState = {
   accessToken: string
@@ -11,7 +11,6 @@ type AuthState = {
   user: AuthUser | null
   clearError: () => void
   logout: () => void
-  registerStudent: (input: RegisterStudentInput) => Promise<AuthUser>
   signIn: (identifier: string, password: string) => Promise<AuthUser>
 }
 
@@ -46,18 +45,6 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: '',
           user: null,
         }),
-      registerStudent: async (input) => {
-        set({ error: '' })
-
-        try {
-          const result = await authApi.registerStudent(input)
-          return result.user
-        } catch (error) {
-          const message = getErrorMessage(error)
-          set({ error: message })
-          throw new Error(message)
-        }
-      },
       signIn: async (identifier, password) => {
         set({ error: '' })
 

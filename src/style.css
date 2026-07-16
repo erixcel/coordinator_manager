@@ -25,3 +25,91 @@
   background-size: 22px 22px;
   animation: studio-progress-stripes 0.85s linear infinite;
 }
+
+.student-fullcalendar {
+  --fc-border-color: #d9e2ec;
+  --fc-neutral-bg-color: #f8fbfd;
+  --fc-now-indicator-color: #8b2332;
+  --fc-page-bg-color: #ffffff;
+  --fc-small-font-size: 12px;
+  color: #1f2937;
+}
+
+.student-fullcalendar .fc {
+  font-family: inherit;
+}
+
+.student-fullcalendar .fc-toolbar {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.student-fullcalendar .fc-toolbar-title {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.student-fullcalendar .fc-button {
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  background: #1f2937;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 700;
+  height: 38px;
+  padding: 0 13px;
+  text-transform: none;
+}
+
+.student-fullcalendar .fc-button:hover,
+.student-fullcalendar .fc-button:focus {
+  border-color: #8b2332;
+  background: #8b2332;
+  box-shadow: none;
+}
+
+.student-fullcalendar .fc-today-button {
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.student-fullcalendar .fc-today-button:disabled {
+  border-color: #d9e2ec;
+  background: #f8fafc;
+  color: #6b7280;
+  opacity: 1;
+}
+
+.student-fullcalendar .fc-scrollgrid {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.student-fullcalendar .fc-col-header-cell {
+  background: #f8fbfd;
+  padding: 10px 0;
+}
+
+.student-fullcalendar .fc-col-header-cell-cushion,
+.student-fullcalendar .fc-timegrid-slot-label-cushion {
+  color: #4b5563;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.student-fullcalendar .fc-timegrid-slot {
+  height: 34px;
+}
+
+.student-fullcalendar .fc-timegrid-event {
+  border-left-width: 4px !important;
+  border-radius: 7px;
+  box-shadow: 0 6px 16px rgba(31, 41, 55, 0.1);
+}
+
+.student-fullcalendar .fc-event-main {
+  color: inherit;
+}

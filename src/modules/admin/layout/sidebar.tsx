@@ -1,12 +1,11 @@
 import {
   BookOpen,
-  Bot,
+  BookOpenCheck,
   BriefcaseBusiness,
+  CalendarRange,
   GraduationCap,
-  History,
   LayoutDashboard,
   LogOut,
-  Sparkles,
   Users,
   X,
 } from 'lucide-react'
@@ -21,9 +20,8 @@ const navItems = [
   { href: '/admin/estudiantes', label: 'Estudiantes', icon: Users },
   { href: '/admin/carreras', label: 'Carreras', icon: GraduationCap },
   { href: '/admin/cursos', label: 'Cursos', icon: BookOpen },
-  { href: '/admin/agente', label: 'Agente', icon: Bot },
-  { href: '/admin/studio', label: 'Studio', icon: Sparkles },
-  { href: '/admin/historial-ia', label: 'Historial IA', icon: History },
+  { href: '/admin/habilitados', label: 'Cursos habilitados', icon: BookOpenCheck },
+  { href: '/admin/studio', label: 'Planificacion', icon: CalendarRange },
 ]
 
 export function Sidebar() {

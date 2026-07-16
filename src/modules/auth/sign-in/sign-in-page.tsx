@@ -6,8 +6,7 @@ import {
   LockKeyhole,
   Mail,
   ShieldCheck,
-  UserPlus,
-  UserRound,
+  GraduationCap,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
@@ -15,40 +14,19 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../store/use-auth-store'
 import { cn, shell } from '../../admin/shared/styles'
 
-type AuthMode = 'sign-in' | 'register'
-
-type RegisterFormState = {
-  confirmPassword: string
-  email: string
-  firstName: string
-  lastName: string
-  password: string
-}
-
-const registerInitialState: RegisterFormState = {
-  confirmPassword: '',
-  email: '',
-  firstName: '',
-  lastName: '',
-  password: '',
-}
+type AuthMode = 'admin' | 'student'
 
 export function SignInPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const accessToken = useAuthStore((state) => state.accessToken)
-  const registerStudent = useAuthStore((state) => state.registerStudent)
   const signIn = useAuthStore((state) => state.signIn)
   const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
-  const [mode, setMode] = useState<AuthMode>('sign-in')
+  const [mode, setMode] = useState<AuthMode>('admin')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showLoginPassword, setShowLoginPassword] = useState(false)
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false)
-  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
-  const [registerForm, setRegisterForm] = useState<RegisterFormState>(registerInitialState)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const identifierRef = useRef<HTMLInputElement | null>(null)
   const passwordRef = useRef<HTMLInputElement | null>(null)
@@ -69,28 +47,40 @@ export function SignInPage() {
     event.preventDefault()
 
     if (!identifier.trim() || !password.trim()) {
-      setError('Escribe tu correo o usuario y tu contrasena.')
+      setError(
+        mode === 'student'
+          ? 'Escribe tu codigo de estudiante y tu contrasena.'
+          : 'Escribe tu correo o usuario y tu contrasena.',
+      )
+      return
+    }
+
+    if (mode === 'student' && !/^U\d{8}$/i.test(identifier.trim())) {
+      setError('El codigo de estudiante debe empezar con U y tener 8 digitos.')
       return
     }
 
     setError('')
-    setSuccess('')
     setIsSubmitting(true)
 
     try {
       const authenticatedUser = await signIn(identifier.trim(), password)
 
-      if (authenticatedUser.role === 'admin') {
+      if (mode === 'admin' && authenticatedUser.role === 'admin') {
         navigate('/admin/resumen', { replace: true })
         return
       }
 
-      if (authenticatedUser.role === 'student') {
+      if (mode === 'student' && authenticatedUser.role === 'student') {
         navigate('/student/inicio', { replace: true })
         return
       }
 
-      throw new Error('Esta cuenta no tiene un rol valido para continuar.')
+      throw new Error(
+        mode === 'admin'
+          ? 'Esta cuenta no tiene permisos administrativos.'
+          : 'Esta cuenta no esta habilitada como estudiante.',
+      )
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : 'No se pudo iniciar sesion.')
     } finally {
@@ -98,52 +88,11 @@ export function SignInPage() {
     }
   }
 
-  async function handleRegister(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const { email, firstName, password: registerPassword, confirmPassword } = registerForm
-    if (!firstName.trim() || !email.trim() || !registerPassword.trim() || !confirmPassword.trim()) {
-      setError('Completa los campos obligatorios para crear la cuenta.')
-      return
-    }
-
-    setError('')
-    setSuccess('')
-    setIsSubmitting(true)
-
-    try {
-      await registerStudent({
-        confirmPassword: registerForm.confirmPassword,
-        email: registerForm.email.trim(),
-        firstName: registerForm.firstName.trim(),
-        lastName: registerForm.lastName.trim(),
-        password: registerForm.password,
-      })
-
-      setIdentifier('')
-      setPassword('')
-      setRegisterForm(registerInitialState)
-      setMode('sign-in')
-      setSuccess('Cuenta creada. Ahora inicia sesion manualmente con tu correo y tu contrasena.')
-    } catch (registerError) {
-      setError(registerError instanceof Error ? registerError.message : 'No se pudo crear la cuenta.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  function updateRegisterField<K extends keyof RegisterFormState>(field: K, value: RegisterFormState[K]) {
-    setRegisterForm((current) => ({ ...current, [field]: value }))
-  }
-
   function switchMode(nextMode: AuthMode) {
     setMode(nextMode)
+    setIdentifier('')
+    setPassword('')
     setError('')
-    if (nextMode === 'register') {
-      setSuccess('El registro crea una cuenta de alumno en la base de datos.')
-    } else if (success === 'El registro crea una cuenta de alumno en la base de datos.') {
-      setSuccess('')
-    }
   }
 
   if (isAuthenticated && accessToken) {
@@ -171,8 +120,8 @@ export function SignInPage() {
                   Administra el acceso con una experiencia mas limpia y real.
                 </h1>
                 <p className="max-w-lg text-sm leading-7 text-white/76 sm:text-[15px]">
-                  El panel administrativo usa inicio de sesion con JWT y el registro crea usuarios nuevos en la base
-                  de datos. Ya no dejamos credenciales visibles ni formularios precargados.
+                  Los administradores gestionan el panel y los estudiantes matriculados ingresan con su codigo
+                  institucional. Todo queda organizado desde una sola pantalla.
                 </p>
               </div>
             </div>
@@ -180,18 +129,18 @@ export function SignInPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <InfoTile
                 icon={LockKeyhole}
-                text="Inicio de sesion con tokens reales y permisos por rol."
-                title="Sesion real"
+                text="Cada persona entra solo al espacio que le corresponde."
+                title="Acceso claro"
               />
               <InfoTile
-                icon={UserPlus}
-                text="El registro crea cuentas de alumno listas para continuar el flujo."
-                title="Alta en base"
+                icon={GraduationCap}
+                text="Los estudiantes matriculados usan su codigo U seguido de 8 digitos."
+                title="Codigo U"
               />
               <InfoTile
                 icon={BadgeCheck}
-                text="Sin datos expuestos en pantalla ni accesos de ejemplo precargados."
-                title="Mas serio"
+                text="Las cuentas se gestionan internamente y no se crean desde esta pantalla."
+                title="Gestion interna"
               />
             </div>
           </div>
@@ -201,42 +150,36 @@ export function SignInPage() {
           <div className="mx-auto w-full max-w-[440px]">
             <div className="mb-6 grid gap-4">
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#eadfce] bg-[#fbf6ef] px-3 py-2 text-sm font-medium text-[#6f2d38]">
-                {mode === 'sign-in' ? <ShieldCheck size={16} strokeWidth={1.8} /> : <UserPlus size={16} strokeWidth={1.8} />}
-                {mode === 'sign-in' ? 'Acceso administrativo' : 'Registro de alumno'}
+                {mode === 'admin' ? <ShieldCheck size={16} strokeWidth={1.8} /> : <GraduationCap size={16} strokeWidth={1.8} />}
+                {mode === 'admin' ? 'Acceso administrativo' : 'Acceso de estudiantes'}
               </div>
 
               <div className="space-y-2">
                 <h2 className="text-[28px] font-semibold leading-tight text-[#1f2937]">
-                  {mode === 'sign-in' ? 'Inicia sesion para entrar al panel.' : 'Crea una cuenta nueva.'}
+                  {mode === 'admin' ? 'Inicia sesion para entrar al panel.' : 'Inicia sesion con tu codigo de estudiante.'}
                 </h2>
                 <p className="text-sm leading-6 text-[#6b7280]">
-                  {mode === 'sign-in'
-                    ? 'Usa tu correo o tu usuario. Si la cuenta no es administrativa, el panel no te dejara entrar.'
-                    : 'Este registro crea una cuenta de alumno en la base de datos. El enlace con datos academicos se puede completar despues.'}
+                  {mode === 'admin'
+                    ? 'Usa tu correo o usuario administrativo. Si la cuenta no tiene permisos, el panel no te dejara entrar.'
+                    : 'Usa tu codigo institucional con formato U######## y la contrasena asignada por la universidad.'}
                 </p>
               </div>
             </div>
 
             <div className="mb-6 grid grid-cols-2 rounded-2xl border border-[#eadfce] bg-[#f8f1e8] p-1">
               <ModeButton
-                active={mode === 'sign-in'}
+                active={mode === 'admin'}
                 icon={ShieldCheck}
-                label="Iniciar sesion"
-                onClick={() => switchMode('sign-in')}
+                label="Administrador"
+                onClick={() => switchMode('admin')}
               />
               <ModeButton
-                active={mode === 'register'}
-                icon={UserPlus}
-                label="Registrarse"
-                onClick={() => switchMode('register')}
+                active={mode === 'student'}
+                icon={GraduationCap}
+                label="Estudiantes"
+                onClick={() => switchMode('student')}
               />
             </div>
-
-            {success ? (
-              <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                {success}
-              </div>
-            ) : null}
 
             {error ? (
               <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
@@ -244,149 +187,72 @@ export function SignInPage() {
               </div>
             ) : null}
 
-            {mode === 'sign-in' ? (
-              <form autoComplete="off" className="grid gap-4" onSubmit={handleSignIn}>
+            <form autoComplete="off" className="grid gap-4" onSubmit={handleSignIn}>
+              <input
+                aria-hidden="true"
+                autoComplete="username"
+                className="hidden"
+                name="fake-username"
+                tabIndex={-1}
+                type="text"
+              />
+              <input
+                aria-hidden="true"
+                autoComplete="current-password"
+                className="hidden"
+                name="fake-password"
+                tabIndex={-1}
+                type="password"
+              />
+              <FieldShell icon={mode === 'student' ? GraduationCap : Mail} label={mode === 'student' ? 'Codigo de estudiante' : 'Correo o usuario'}>
                 <input
-                  aria-hidden="true"
-                  autoComplete="username"
-                  className="hidden"
-                  name="fake-username"
-                  tabIndex={-1}
+                  ref={identifierRef}
+                  autoComplete="off"
+                  className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
+                  onChange={(event) => setIdentifier(mode === 'student' ? event.target.value.toUpperCase() : event.target.value)}
+                  name={mode === 'student' ? 'student-code' : 'admin-access-key'}
+                  placeholder={mode === 'student' ? 'U12345678' : 'Escribe tu correo o usuario'}
                   type="text"
+                  value={identifier}
                 />
-                <input
-                  aria-hidden="true"
-                  autoComplete="current-password"
-                  className="hidden"
-                  name="fake-password"
-                  tabIndex={-1}
-                  type="password"
-                />
-                <FieldShell icon={Mail} label="Correo o usuario">
+              </FieldShell>
+
+              <FieldShell icon={LockKeyhole} label="Contrasena">
+                <div className="flex w-full min-w-0 items-center gap-2">
                   <input
-                    ref={identifierRef}
-                    autoComplete="off"
-                    className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                    onChange={(event) => setIdentifier(event.target.value)}
-                    name="admin-access-key"
-                    placeholder="Escribe tu correo o usuario"
-                    type="text"
-                    value={identifier}
+                    ref={passwordRef}
+                    autoComplete="new-password"
+                    className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
+                    name={mode === 'student' ? 'student-access-secret' : 'admin-access-secret'}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder={mode === 'student' ? 'Contrasena asignada' : 'Escribe tu contrasena'}
+                    type={showLoginPassword ? 'text' : 'password'}
+                    value={password}
                   />
-                </FieldShell>
-
-                <FieldShell icon={LockKeyhole} label="Contrasena">
-                  <div className="flex items-center gap-3">
-                    <input
-                      ref={passwordRef}
-                      autoComplete="new-password"
-                      className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                      name="admin-access-secret"
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Escribe tu contrasena"
-                      type={showLoginPassword ? 'text' : 'password'}
-                      value={password}
-                    />
-                    <VisibilityButton
-                      isVisible={showLoginPassword}
-                      onClick={() => setShowLoginPassword((current) => !current)}
-                    />
-                  </div>
-                </FieldShell>
-
-                <button
-                  className="mt-2 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-[#ff355d] px-6 text-[15px] font-semibold text-white transition hover:bg-[#e8294f] disabled:cursor-not-allowed disabled:bg-[#d6d3d1]"
-                  disabled={isSubmitting}
-                  type="submit"
-                >
-                  <ShieldCheck size={18} strokeWidth={1.8} />
-                  {isSubmitting ? 'Validando acceso...' : 'Entrar al panel'}
-                </button>
-              </form>
-            ) : (
-              <form autoComplete="off" className="grid gap-4" onSubmit={handleRegister}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FieldShell icon={UserRound} label="Nombres">
-                    <input
-                      autoComplete="given-name"
-                      className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                      onChange={(event) => updateRegisterField('firstName', event.target.value)}
-                      placeholder="Jefferson"
-                      type="text"
-                      value={registerForm.firstName}
-                    />
-                  </FieldShell>
-                  <FieldShell icon={UserRound} label="Apellidos">
-                    <input
-                      autoComplete="family-name"
-                      className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                      onChange={(event) => updateRegisterField('lastName', event.target.value)}
-                      placeholder="Gonzalez"
-                      type="text"
-                      value={registerForm.lastName}
-                    />
-                  </FieldShell>
+                  <VisibilityButton
+                    isVisible={showLoginPassword}
+                    onClick={() => setShowLoginPassword((current) => !current)}
+                  />
                 </div>
+              </FieldShell>
 
-                <FieldShell icon={Mail} label="Correo">
-                  <input
-                    autoComplete="email"
-                    className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                    onChange={(event) => updateRegisterField('email', event.target.value)}
-                    placeholder="nombre@correo.com"
-                    type="email"
-                    value={registerForm.email}
-                  />
-                </FieldShell>
-
-                <FieldShell icon={LockKeyhole} label="Contrasena">
-                  <div className="flex items-center gap-3">
-                    <input
-                      autoComplete="new-password"
-                      className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                      onChange={(event) => updateRegisterField('password', event.target.value)}
-                      placeholder="Minimo 8 caracteres"
-                      type={showRegisterPassword ? 'text' : 'password'}
-                      value={registerForm.password}
-                    />
-                    <VisibilityButton
-                      isVisible={showRegisterPassword}
-                      onClick={() => setShowRegisterPassword((current) => !current)}
-                    />
-                  </div>
-                </FieldShell>
-
-                <FieldShell icon={BadgeCheck} label="Confirmar contrasena">
-                  <div className="flex items-center gap-3">
-                    <input
-                      autoComplete="new-password"
-                      className="h-14 w-full bg-transparent text-[15px] text-[#111827] outline-none placeholder:text-[#9ca3af]"
-                      onChange={(event) => updateRegisterField('confirmPassword', event.target.value)}
-                      placeholder="Repite tu contrasena"
-                      type={showRegisterConfirmPassword ? 'text' : 'password'}
-                      value={registerForm.confirmPassword}
-                    />
-                    <VisibilityButton
-                      isVisible={showRegisterConfirmPassword}
-                      onClick={() => setShowRegisterConfirmPassword((current) => !current)}
-                    />
-                  </div>
-                </FieldShell>
-
-                <button
-                  className="mt-2 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-[#1f2937] px-6 text-[15px] font-semibold text-white transition hover:bg-[#111827] disabled:cursor-not-allowed disabled:bg-[#d6d3d1]"
-                  disabled={isSubmitting}
-                  type="submit"
-                >
-                  <UserPlus size={18} strokeWidth={1.8} />
-                  {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
-                </button>
-              </form>
-            )}
+              <button
+                className="mt-2 inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-[#ff355d] px-6 text-[15px] font-semibold text-white transition hover:bg-[#e8294f] disabled:cursor-not-allowed disabled:bg-[#d6d3d1]"
+                disabled={isSubmitting}
+                type="submit"
+              >
+                {mode === 'student' ? <GraduationCap size={18} strokeWidth={1.8} /> : <ShieldCheck size={18} strokeWidth={1.8} />}
+                {isSubmitting ? 'Validando acceso...' : mode === 'student' ? 'Entrar como estudiante' : 'Entrar al panel'}
+              </button>
+            </form>
 
             <div className="mt-6 flex items-center gap-2 text-sm text-[#6b7280]">
               <ArrowRight size={15} strokeWidth={1.8} />
-              <span>{mode === 'sign-in' ? 'Sin credenciales visibles ni valores precargados.' : 'El usuario se guarda de inmediato en la base de datos.'}</span>
+              <span>
+                {mode === 'student'
+                  ? 'Las cuentas estudiantiles son creadas internamente por la universidad.'
+                  : 'Sin credenciales visibles ni valores precargados.'}
+              </span>
             </div>
           </div>
         </section>

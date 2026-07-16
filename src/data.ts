@@ -158,12 +158,265 @@ export type StudentScheduleProposal = {
   }>
 }
 
+export type StudentEnrollmentOptions = {
+  courses: Array<{
+    ciclo: number
+    codigo: string
+    creditos: number
+    curso_id: number
+    horas_semanales: number
+    nombre: string
+    sections: Array<{
+      capacidad: number
+      capacidad_efectiva: number
+      codigo: string
+      docente: string
+      docente_email: string
+      modalidad: string
+      modalidad_label: string
+      estudiantes_estimados: number
+      matriculados: number
+      schedules: Array<{
+        aula: string
+        aula_capacidad: number
+        dia: string
+        dia_label: string
+        hora_fin: string
+        hora_inicio: string
+        horario_id: number
+        sede: string
+      }>
+      seccion_id: number
+    }>
+  }>
+  message: string
+  selected_section_ids?: number[]
+  student: {
+    carrera: string
+    carrera_id: number
+    ciclo_actual: number | null
+    codigo: string
+  } | null
+  summary: {
+    total_courses: number
+    total_schedules: number
+    total_sections: number
+  }
+}
+
+export type StudentConfirmedEnrollment = {
+  courses: Array<{
+    ciclo: number
+    codigo: string
+    creditos: number
+    curso_id: number
+    horas_semanales: number
+    nombre: string
+    sections: Array<{
+      codigo: string
+      docente: string
+      docente_email: string
+      modalidad: string
+      modalidad_label: string
+      schedules: Array<{
+        aula: string
+        dia: string
+        dia_label: string
+        hora_fin: string
+        hora_inicio: string
+        horario_id: number
+        sede: string
+      }>
+      seccion_id: number
+    }>
+  }>
+  message: string
+  schedule: Array<{
+    aula: string
+    bloque: string
+    codigo: string
+    creditos: number
+    curso: string
+    curso_id: number
+    dia: string
+    dia_label: string
+    docente: string
+    docente_email: string
+    hora_fin: string
+    hora_inicio: string
+    horario_id: number
+    horas_semanales: number
+    modalidad: string
+    modalidad_label: string
+    seccion: number
+    seccion_codigo: string
+    seccion_id: number
+    sede: string
+  }>
+  student: {
+    carrera: string
+    carrera_id: number
+    ciclo_actual: number | null
+    codigo: string
+  } | null
+  summary: {
+    total_courses: number
+    total_schedules: number
+    total_sections: number
+  }
+}
+
+export type StudentEnrollmentAssistantResponse = {
+  answer: string
+  mode: 'local_ai' | 'backend_rules'
+  recommended_section_ids: number[]
+  summary: {
+    allowed_days?: string[]
+    excluded_days?: string[]
+    matched_courses: number
+    total_courses: number
+    turn?: string
+  }
+}
+
+export type StudentEnrollmentAssistantPreferences = {
+  allowed_days?: string[]
+  excluded_days?: string[]
+  turn?: 'manana' | 'tarde' | 'noche' | ''
+}
+
+export type AdminEnabledCourses = {
+  courses: Array<{
+    carrera: string
+    carrera_id: number
+    ciclo: number
+    codigo: string
+    creditos: number
+    curso_id: number
+    horas_semanales: number
+    nombre: string
+    sections: Array<{
+      capacidad: number
+      capacidad_efectiva: number
+      codigo: string
+      docente: string
+      docente_email: string
+      docente_id: number
+      estudiantes_estimados: number
+      matriculados: number
+      modalidad: string
+      modalidad_label: string
+      schedules: Array<{
+        aula: string
+        aula_capacidad: number
+        dia: string
+        dia_label: string
+        hora_fin: string
+        hora_inicio: string
+        horario_id: number
+        sede: string
+      }>
+      seccion_id: number
+      vacantes_disponibles: number
+    }>
+  }>
+  filters: {
+    careers: Array<{ carrera_id: number; nombre: string }>
+    credits: number[]
+    cycles: number[]
+    modalities: Array<{ label: string; value: string }>
+    teachers: Array<{ docente_id: number; nombre: string }>
+  }
+  summary: {
+    total_courses: number
+    total_schedules: number
+    total_sections: number
+  }
+}
+
+export type SchedulingParameter = {
+  default: number
+  key: string
+  label: string
+  options: number[]
+}
+
+export type SchedulingAlgorithm = {
+  description: string
+  id: 'astar' | 'beam' | 'bfs' | 'dfs' | 'genetic'
+  label: string
+  parameters: SchedulingParameter[]
+}
+
+export type SchedulingConfig = {
+  algoritmos: SchedulingAlgorithm[]
+  carreras: Array<Career & { ciclos: number[] }>
+  secciones_por_curso: number[]
+  turnos: Array<{ label: string; value: string }>
+}
+
+export type SchedulingSection = {
+  aula: string
+  bloque: string
+  dia: string
+  docente: string
+  docente_id: number | null
+  horario: string
+  modalidad: string
+  seccion: number
+  turno: string
+}
+
+export type SchedulingCourse = {
+  ciclo: number
+  codigo: string
+  creditos: string
+  curso_id: number
+  horas_semanales: string
+  nombre: string
+  secciones: SchedulingSection[]
+}
+
+export type SchedulingProposal = {
+  accepted_at: string | null
+  algoritmo: string
+  carrera: string
+  carrera_id: number
+  ciclo: number
+  configuracion: {
+    algoritmo?: string
+    parametros?: Record<string, number>
+    turno?: string
+  }
+  created_at: string
+  cursos: SchedulingCourse[]
+  estado: 'borrador' | 'aceptada' | 'rechazada'
+  estado_label: string
+  fitness_score: number
+  metricas: Record<string, string | number>
+  propuesta_id: number
+  total_cursos: number
+  total_estudiantes: number
+  total_secciones: number
+}
+
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? 'http://127.0.0.1:8000'
 const API_ROOT_URL = rawApiBaseUrl.replace(/\/api\/academic$/, '').replace(/\/api$/, '')
 const API_BASE_URL = `${API_ROOT_URL}/api/academic`
 const AGENT_API_BASE_URL = `${API_ROOT_URL}/api/agent`
 const AUTH_API_BASE_URL = `${API_ROOT_URL}/api/auth`
 export const AUTH_STORAGE_KEY = 'coordinator-manager-admin'
+
+function normalizeApiErrorMessage(message: string) {
+  const dictionary: Record<string, string> = {
+    'This password is too common.': 'La contrasena es demasiado comun.',
+    'This password is entirely numeric.': 'La contrasena no puede ser completamente numerica.',
+    'This password is too short. It must contain at least 8 characters.':
+      'La contrasena debe tener al menos 8 caracteres.',
+  }
+
+  return dictionary[message] ?? message
+}
 
 export type AuthRole = 'admin' | 'student' | ''
 
@@ -182,14 +435,6 @@ export type AuthSession = {
   accessToken: string
   refreshToken: string
   user: AuthUser
-}
-
-export type RegisterStudentInput = {
-  confirmPassword: string
-  email: string
-  firstName: string
-  lastName: string
-  password: string
 }
 
 type PaginatedResponse<T> = {
@@ -289,7 +534,10 @@ async function fetchWithAuth(url: string, options: RequestInit = {}, retry = tru
 }
 
 async function loadApiList<T>(path: string): Promise<T[]> {
-  const url = `${API_BASE_URL}/${path}/?all=true`
+  const [pathname, rawQuery = ''] = path.split('?')
+  const query = new URLSearchParams(rawQuery)
+  query.set('all', 'true')
+  const url = `${API_BASE_URL}/${pathname.replace(/^\/+|\/+$/g, '')}/?${query.toString()}`
   const response = await fetchWithAuth(url)
 
   if (!response.ok) {
@@ -313,9 +561,17 @@ async function loadApiObject<T>(path: string): Promise<T> {
 export const academicApi = {
   getCareers: () => loadApiList<Career>('careers'),
   getCareerStats: () => loadApiList<CareerStats>('career-stats'),
-  getCourses: () => loadApiList<Course>('courses'),
+  getCourses: (filters?: { careerId?: number; cycle?: number }) => {
+    const query = new URLSearchParams()
+    if (filters?.careerId) query.set('carrera_id', String(filters.careerId))
+    if (filters?.cycle) query.set('ciclo', String(filters.cycle))
+    return loadApiList<Course>(`courses${query.size ? `?${query.toString()}` : ''}`)
+  },
+  getEnabledCourses: () => loadApiObject<AdminEnabledCourses>('enabled-courses'),
   getCurriculum: () => loadApiList<Curriculum>('curriculum'),
   getStudentContext: () => loadApiObject<StudentContext>('student/context'),
+  getStudentEnrollmentOptions: () => loadApiObject<StudentEnrollmentOptions>('student/enrollment-options'),
+  getStudentEnrollments: () => loadApiObject<StudentConfirmedEnrollment>('student/enrollments'),
   getStudentScheduleProposal: (proposalId?: number) =>
     loadApiObject<StudentScheduleProposal>(
       proposalId ? `student/schedule-proposal?proposal_id=${proposalId}` : 'student/schedule-proposal',
@@ -344,6 +600,76 @@ export const academicApi = {
 
     return response.json() as Promise<{ message: string; student: Student }>
   },
+  async resetStudentPassword(payload: { confirmPassword: string; estudianteId: number; newPassword: string }) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/students/${payload.estudianteId}/reset-password/`,
+      {
+        body: JSON.stringify({
+          confirm_password: payload.confirmPassword,
+          new_password: payload.newPassword,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      },
+    )
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as Record<string, string[] | string> | null
+      const firstError = data
+        ? Object.values(data).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
+        : null
+      throw new Error(
+        typeof firstError === 'string'
+          ? normalizeApiErrorMessage(firstError)
+          : 'No se pudo restablecer la contrasena.',
+      )
+    }
+
+    return response.json() as Promise<{ email: string; message: string; student_id: number }>
+  },
+  async saveStudentEnrollment(sectionIds: number[]) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/student/enrollments/`, {
+      body: JSON.stringify({ section_ids: sectionIds }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { detail?: string } | Record<string, string[] | string> | null
+      const firstError = data && 'detail' in data
+        ? data.detail
+        : data
+          ? Object.values(data).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
+          : null
+      throw new Error(typeof firstError === 'string' ? firstError : 'No se pudo registrar la matricula.')
+    }
+
+    return response.json() as Promise<StudentConfirmedEnrollment>
+  },
+  async askStudentEnrollmentAssistant(payload: {
+    message?: string
+    preferences?: StudentEnrollmentAssistantPreferences
+    selectedSectionIds: number[]
+  }) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/student/enrollment-assistant/`, {
+      body: JSON.stringify({
+        allowed_days: payload.preferences?.allowed_days ?? [],
+        excluded_days: payload.preferences?.excluded_days ?? [],
+        message: payload.preferences ? '' : payload.message ?? '',
+        selected_section_ids: payload.selectedSectionIds,
+        turn: payload.preferences?.turn ?? '',
+      }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { detail?: string } | null
+      throw new Error(data?.detail ?? 'No se pudo consultar el asistente de matricula.')
+    }
+
+    return response.json() as Promise<StudentEnrollmentAssistantResponse>
+  },
 }
 
 export const authApi = {
@@ -371,30 +697,6 @@ export const authApi = {
 
     if (!response.ok) {
       throw new Error('No se pudo validar la sesion actual.')
-    }
-
-    return response.json()
-  },
-  async registerStudent(input: RegisterStudentInput): Promise<{ message: string; user: AuthUser }> {
-    const response = await fetch(`${AUTH_API_BASE_URL}/register/`, {
-      body: JSON.stringify({
-        confirm_password: input.confirmPassword,
-        email: input.email,
-        first_name: input.firstName,
-        last_name: input.lastName,
-        password: input.password,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    })
-
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null) as Record<string, string[] | string> | null
-      const firstError = payload
-        ? Object.values(payload).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
-        : null
-
-      throw new Error(typeof firstError === 'string' ? firstError : 'No se pudo completar el registro.')
     }
 
     return response.json()
@@ -487,6 +789,48 @@ export const agentStudioHistoryApi = {
     }),
   get: (id: string) => loadAgentObject<AgentStudioRunRecord>(`studio-runs/${id}/`),
   list: () => loadAgentObject<AgentStudioRunRecord[]>('studio-runs/?limit=100'),
+}
+
+async function loadSchedulingObject<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetchWithAuth(`${AGENT_API_BASE_URL}/scheduling/${path}`, options)
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null) as Record<string, unknown> | null
+    const detail = payload?.detail
+    const firstError = payload
+      ? Object.values(payload).flatMap((value) => (Array.isArray(value) ? value : [value])).find(Boolean)
+      : null
+    throw new Error(
+      typeof detail === 'string'
+        ? detail
+        : typeof firstError === 'string'
+          ? firstError
+          : 'No se pudo completar la planificacion.',
+    )
+  }
+
+  return response.json()
+}
+
+export const schedulingApi = {
+  enable: (proposalId: number) =>
+    loadSchedulingObject<SchedulingProposal>(`proposals/${proposalId}/enable/`, { method: 'POST' }),
+  getConfig: () => loadSchedulingObject<SchedulingConfig>('config/'),
+  list: (state?: SchedulingProposal['estado']) =>
+    loadSchedulingObject<SchedulingProposal[]>(`proposals/${state ? `?estado=${state}` : ''}`),
+  run: (payload: {
+    algoritmo: SchedulingAlgorithm['id']
+    carrera_id: number
+    ciclo: number
+    parametros: Record<string, number>
+    secciones_objetivo: number
+    turno: string
+  }) =>
+    loadSchedulingObject<SchedulingProposal>('proposals/', {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }),
 }
 
 function parseSseChunk(buffer: string) {

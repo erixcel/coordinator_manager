@@ -1,16 +1,16 @@
 import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AdminLayout } from '../modules/admin/layout/admin-layout'
-import { AgentePage } from '../modules/admin/content/agente/agente-page'
 import { CarrerasPage } from '../modules/admin/content/carreras/carreras-page'
 import { CursosPage } from '../modules/admin/content/cursos/cursos-page'
+import { EnabledCoursesPage } from '../modules/admin/content/habilitados/enabled-courses-page'
 import { EstudiantesPage } from '../modules/admin/content/estudiantes/estudiantes-page'
-import { HistorialIaPage } from '../modules/admin/content/historial-ia/historial-ia-page'
 import { ProfesoresPage } from '../modules/admin/content/profesores/profesores-page'
 import { ResumenPage } from '../modules/admin/content/resumen/resumen-page'
 import { StudioPage } from '../modules/admin/content/studio/studio-page'
 import { SignInPage } from '../modules/auth/sign-in/sign-in-page'
 import { StudentHomePage } from '../modules/student/content/student-home-page'
-import { StudentPlaceholderPage } from '../modules/student/content/student-placeholder-page'
+import { StudentCoursesPage } from '../modules/student/content/student-courses-page'
+import { StudentEnrollmentPage } from '../modules/student/content/student-enrollment-page'
 import { StudentSchedulePage } from '../modules/student/content/student-schedule-page'
 import { StudentLayout } from '../modules/student/layout/student-layout'
 
@@ -65,8 +65,12 @@ const router = createBrowserRouter([
         element: <CursosPage />,
       },
       {
+        path: 'habilitados',
+        element: <EnabledCoursesPage />,
+      },
+      {
         path: 'agente',
-        element: <AgentePage />,
+        element: <Navigate replace to="/admin/studio" />,
       },
       {
         path: 'studio',
@@ -74,11 +78,11 @@ const router = createBrowserRouter([
       },
       {
         path: 'historial-ia',
-        element: <HistorialIaPage />,
+        element: <Navigate replace to="/admin/studio" />,
       },
       {
         path: 'historial-ia/:runId',
-        element: <HistorialIaPage />,
+        element: <Navigate replace to="/admin/studio" />,
       },
     ],
   },
@@ -100,30 +104,19 @@ const router = createBrowserRouter([
       },
       {
         path: 'cursos',
-        element: (
-          <StudentPlaceholderPage
-            description="Aqui mostraremos los cursos sugeridos o asignados para la matricula del alumno."
-            title="Mis cursos"
-          />
-        ),
+        element: <StudentCoursesPage />,
+      },
+      {
+        path: 'matricula',
+        element: <StudentEnrollmentPage />,
       },
       {
         path: 'recomendaciones',
-        element: (
-          <StudentPlaceholderPage
-            description="Aqui viviran las recomendaciones y explicaciones de la IA para el estudiante."
-            title="Recomendaciones"
-          />
-        ),
+        element: <Navigate replace to="/student/matricula" />,
       },
       {
         path: 'exportar',
-        element: (
-          <StudentPlaceholderPage
-            description="Aqui prepararemos el resumen o prompt exportable con la propuesta de matricula."
-            title="Exportar propuesta"
-          />
-        ),
+        element: <Navigate replace to="/student/matricula" />,
       },
     ],
   },

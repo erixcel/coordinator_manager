@@ -1,4 +1,4 @@
-import { BookOpenCheck, CalendarDays, FileText, Lightbulb, LogOut, Menu, UserRound, X } from 'lucide-react'
+import { BookOpenCheck, CalendarDays, ClipboardCheck, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../store/use-auth-store'
 import { useStudentStore } from '../../../store/use-student-store'
@@ -9,8 +9,7 @@ const studentNavItems = [
   { href: '/student/inicio', label: 'Inicio', icon: UserRound },
   { href: '/student/horario', label: 'Mi horario', icon: CalendarDays },
   { href: '/student/cursos', label: 'Mis cursos', icon: BookOpenCheck },
-  { href: '/student/recomendaciones', label: 'Recomendaciones', icon: Lightbulb },
-  { href: '/student/exportar', label: 'Exportar', icon: FileText },
+  { href: '/student/matricula', label: 'Matricula', icon: ClipboardCheck },
 ]
 
 export function StudentLayout() {

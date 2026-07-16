@@ -28,6 +28,7 @@ type AdminState = {
   linkStudentAccount: (estudianteId: number, email: string) => Promise<void>
   openSidebar: () => void
   resetAdminState: () => void
+  resetStudentPassword: (estudianteId: number, newPassword: string, confirmPassword: string) => Promise<string>
   toggleSidebar: () => void
 }
 
@@ -135,6 +136,19 @@ export const useAdminStore = create<AdminState>()((set, get) => {
             summary: null,
             teachers: [],
           }),
+        resetStudentPassword: async (estudianteId, newPassword, confirmPassword) => {
+          try {
+            const response = await academicApi.resetStudentPassword({
+              confirmPassword,
+              estudianteId,
+              newPassword,
+            })
+            return response.message
+          } catch (error) {
+            const message = getErrorMessage(error)
+            throw new Error(message)
+          }
+        },
         toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       }
 })
